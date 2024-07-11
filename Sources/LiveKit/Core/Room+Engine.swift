@@ -289,7 +289,7 @@ extension Room {
 
         // quick connect sequence, does not update connection state
         @Sendable func quickReconnectSequence() async throws {
-            log("[Connect] Starting .quick reconnect sequence...")
+            log("[Connect] Starting .quick reconnect sequence...", .error)
 
             let connectResponse = try await signalClient.connect(url,
                                                                  token,
@@ -305,7 +305,7 @@ extension Room {
             // Resume after configuring transports...
             await signalClient.resumeQueues()
 
-            log("[Connect] Waiting for subscriber to connect...")
+            log("[Connect] Waiting for subscriber to connect...", .error)
             // Wait for primary transport to connect (if not already)
             try await primaryTransportConnectedCompleter.wait(timeout: _state.connectOptions.primaryTransportConnectTimeout)
             try Task.checkCancellation()
@@ -317,7 +317,7 @@ extension Room {
 
             if let publisher = _state.publisher, _state.hasPublished {
                 // Only if published, wait for publisher to connect...
-                log("[Connect] Waiting for publisher to connect...")
+                log("[Connect] Waiting for publisher to connect...", .error)
                 try await publisher.createAndSendOffer(iceRestart: true)
                 try await publisherTransportConnectedCompleter.wait(timeout: _state.connectOptions.publisherTransportConnectTimeout)
             }
@@ -326,7 +326,7 @@ extension Room {
         // "full" re-connection sequence
         // as a last resort, try to do a clean re-connection and re-publish existing tracks
         @Sendable func fullReconnectSequence() async throws {
-            log("[Connect] starting .full reconnect sequence...")
+            log("[Connect] starting .full reconnect sequence...", .error)
 
             _state.mutate {
                 // Mark as Re-connecting
@@ -338,7 +338,7 @@ extension Room {
             guard let url = _state.url,
                   let token = _state.token
             else {
-                log("[Connect] Url or token is nil")
+                log("[Connect] Url or token is nil", .error)
                 throw LiveKitError(.invalidState)
             }
 
@@ -352,14 +352,14 @@ extension Room {
 
                 // Not reconnecting state anymore
                 guard let currentMode = self._state.isReconnectingWithMode else {
-                    self.log("[Connect] Not in reconnect state anymore, exiting retry cycle.")
+                    self.log("[Connect] Not in reconnect state anymore, exiting retry cycle.", .error)
                     return
                 }
 
                 // Full reconnect failed, give up
                 guard currentMode != .full else { return }
 
-                self.log("[Connect] Retry in \(self._state.connectOptions.reconnectAttemptDelay) seconds, \(currentAttempt)/\(totalAttempts) tries left.")
+                self.log("[Connect] Retry in \(self._state.connectOptions.reconnectAttemptDelay) seconds, \(currentAttempt)/\(totalAttempts) tries left.", .error)
 
                 // Try full reconnect for the final attempt
                 if totalAttempts == currentAttempt, self._state.nextReconnectMode == nil {
@@ -387,14 +387,14 @@ extension Room {
             }.value
 
             // Re-connect sequence successful
-            log("[Connect] Sequence completed")
+            log("[Connect] Sequence completed", .error)
             _state.mutate {
                 $0.connectionState = .connected
                 $0.isReconnectingWithMode = nil
                 $0.nextReconnectMode = nil
             }
         } catch {
-            log("[Connect] Sequence failed with error: \(error)")
+            log("[Connect] Sequence failed with error: \(error)", .error)
 
             if !Task.isCancelled {
                 // Finally disconnect if all attempts fail
