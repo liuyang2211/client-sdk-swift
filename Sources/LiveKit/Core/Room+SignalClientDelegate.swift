@@ -27,6 +27,7 @@ extension Room: SignalClientDelegate {
                       oldState: ConnectionState,
                       disconnectError: LiveKitError?) async
     {
+        log("signalClient connectionState:\(connectionState) oldState:\(oldState), error: \(String(describing: disconnectError))", .warning)
         // connectionState did update
         if connectionState != oldState,
            // did disconnect
@@ -37,6 +38,7 @@ extension Room: SignalClientDelegate {
            case .connected = _state.connectionState
         {
             do {
+                log("signalClient startReconnect ", .warning)
                 try await startReconnect(reason: .websocket)
             } catch {
                 log("Failed calling startReconnect, error: \(error)", .error)

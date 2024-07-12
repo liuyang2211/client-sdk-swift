@@ -55,9 +55,13 @@ extension Room: TransportDelegate {
         }
 
         if _state.connectionState == .connected {
+            
+            log("transport.isPrimary:\(transport.isPrimary) _state.hasPublished:\(_state.hasPublished) transport.target:\(transport.target) pcState.isDisconnected:\(pcState.isDisconnected)", .warning )
+            
             // Attempt re-connect if primary or publisher transport failed
             if transport.isPrimary || (_state.hasPublished && transport.target == .publisher), pcState.isDisconnected {
                 do {
+                    log("transport startReconnect)", .warning )
                     try await startReconnect(reason: .transport)
                 } catch {
                     log("Failed calling startReconnect, error: \(error)", .error)
