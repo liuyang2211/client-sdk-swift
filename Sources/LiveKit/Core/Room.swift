@@ -190,14 +190,14 @@ public class Room: NSObject, ObservableObject, Loggable {
 
         super.init()
         // log sdk & os versions
-        log("sdk: \(LiveKitSDK.version), os: \(String(describing: Utils.os()))(\(Utils.osVersionString())), modelId: \(String(describing: Utils.modelIdentifier() ?? "unknown"))")
+        log("sdk: \(LiveKitSDK.version), os: \(String(describing: Utils.os()))(\(Utils.osVersionString())), modelId: \(String(describing: Utils.modelIdentifier() ?? "unknown"))", .warning)
 
         signalClient._delegate.set(delegate: self)
 
         log()
 
         if let delegate {
-            log("delegate: \(String(describing: delegate))")
+            log("delegate: \(String(describing: delegate))" , .warning)
             delegates.add(delegate: delegate)
         }
 
@@ -239,7 +239,7 @@ public class Room: NSObject, ObservableObject, Loggable {
             }
 
             if (newState.connectionState != oldState.connectionState) || (newState.isReconnectingWithMode != oldState.isReconnectingWithMode) {
-                self.log("connectionState: \(oldState.connectionState) -> \(newState.connectionState), reconnectMode: \(String(describing: newState.isReconnectingWithMode))")
+                self.log("connectionState: \(oldState.connectionState) -> \(newState.connectionState), reconnectMode: \(String(describing: newState.isReconnectingWithMode))", .warning)
             }
 
             self.engine(self, didMutateState: newState, oldState: oldState)
@@ -248,7 +248,7 @@ public class Room: NSObject, ObservableObject, Loggable {
             self._blockProcessQueue.async { [weak self] in
                 guard let self, !self._queuedBlocks.isEmpty else { return }
 
-                self.log("[execution control] processing pending entries (\(self._queuedBlocks.count))...")
+                self.log("[execution control] processing pending entries (\(self._queuedBlocks.count))...", .warning)
 
                 self._queuedBlocks.removeAll { entry in
                     // return and remove this entry if matches remove condition
@@ -256,7 +256,7 @@ public class Room: NSObject, ObservableObject, Loggable {
                     // return but don't remove this entry if doesn't match execute condition
                     guard entry.executeCondition(newState, oldState) else { return false }
 
-                    self.log("[execution control] condition matching block...")
+                    self.log("[execution control] condition matching block...", .warning)
                     entry.block()
                     // remove this entry
                     return true

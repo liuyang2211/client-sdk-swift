@@ -192,13 +192,13 @@ extension TrackPublication: TrackDelegateInternal {
     func track(_ track: Track, didMutateState newState: Track.State, oldState: Track.State) {
         // Notify on UI updating changes
         if newState.isMuted != oldState.isMuted {
-            log("Track didMutateState newState: \(newState), oldState: \(oldState), kind: \(track.kind)")
+            log("Track didMutateState newState: \(newState), oldState: \(oldState), kind: \(track.kind)", .warning)
             notifyObjectWillChange()
         }
     }
 
     public func track(_: Track, didUpdateIsMuted isMuted: Bool, shouldSendSignal: Bool) {
-        log("isMuted: \(isMuted) shouldSendSignal: \(shouldSendSignal)")
+        log("isMuted: \(isMuted) shouldSendSignal: \(shouldSendSignal)", .warning)
 
         Task.detached {
             let participant = try await self.requireParticipant()

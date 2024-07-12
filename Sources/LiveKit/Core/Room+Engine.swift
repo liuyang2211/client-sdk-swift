@@ -234,6 +234,9 @@ public enum StartReconnectReason {
 extension Room {
     // full connect sequence, doesn't update connection state
     func fullConnectSequence(_ url: String, _ token: String) async throws {
+        
+        log("fullConnectSequence 方法开始了 ", .error)
+        
         let connectResponse = try await signalClient.connect(url,
                                                              token,
                                                              connectOptions: _state.connectOptions,
@@ -290,6 +293,11 @@ extension Room {
         // quick connect sequence, does not update connection state
         @Sendable func quickReconnectSequence() async throws {
             log("[Connect] Starting .quick reconnect sequence...", .warning)
+            log("[Connect] 看看有没有发重连 delegate ", .warning)
+            _state.mutate {
+                // Mark as Re-connecting
+                $0.connectionState = .reconnecting
+            }
 
             let connectResponse = try await signalClient.connect(url,
                                                                  token,
@@ -336,7 +344,9 @@ extension Room {
             }
 
             await cleanUp(isFullReconnect: true)
-
+            log("我想知道代理是不是已经发走了呢", .error)
+            
+            
             guard let url = _state.url,
                   let token = _state.token
             else {
@@ -359,12 +369,23 @@ extension Room {
                 }
 
                 // Full reconnect failed, give up
-                guard currentMode != .full else { return }
+                guard currentMode != .full else { 
+                    
+                    self.log("Full reconnect failed, give up", .warning)
+                    
+                    return
+                }
 
-                self.log("[Connect] Retry in \(self._state.connectOptions.reconnectAttemptDelay) seconds, \(currentAttempt)/\(totalAttempts) tries left.", .error)
+                self.log("[Connect] Retry in \(self._state.connectOptions.reconnectAttemptDelay) seconds, \(currentAttempt)/\(totalAttempts) tries left.", .warning)
+                
+                self.log("[Connect] totalAttempts \(currentAttempt), self._state.nextReconnectMode \(String(describing: self._state.nextReconnectMode)) ", .warning)
 
                 // Try full reconnect for the final attempt
                 if totalAttempts == currentAttempt, self._state.nextReconnectMode == nil {
+                    
+                    
+                    self.log("[Connect] totalAttempts 进来了", .warning)
+                    
                     self._state.mutate { $0.nextReconnectMode = .full }
                 }
 
