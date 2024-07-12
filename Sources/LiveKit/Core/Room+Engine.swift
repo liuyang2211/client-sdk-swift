@@ -128,16 +128,16 @@ extension Room {
         let rtcConfiguration = makeConfiguration()
 
         if case let .join(joinResponse) = connectResponse {
-            log("Configuring transports with JOIN response...")
+            log("Configuring transports with JOIN response...",.warning)
 
             guard _state.subscriber == nil, _state.publisher == nil else {
-                log("Transports are already configured")
+                log("Transports are already configured",.warning)
                 return
             }
 
             // protocol v3
             let isSubscriberPrimary = joinResponse.subscriberPrimary
-            log("subscriberPrimary: \(joinResponse.subscriberPrimary)")
+            log("subscriberPrimary: \(joinResponse.subscriberPrimary)",.warning)
 
             let subscriber = try Transport(config: rtcConfiguration,
                                            target: .subscriber,
@@ -151,7 +151,7 @@ extension Room {
 
             await publisher.set { [weak self] offer in
                 guard let self else { return }
-                self.log("Publisher onOffer \(offer.sdp)")
+                self.log("Publisher onOffer \(offer.sdp)",.warning)
                 try await self.signalClient.send(offer: offer)
             }
 
@@ -166,8 +166,8 @@ extension Room {
             publisherDataChannel.set(reliable: reliableDataChannel)
             publisherDataChannel.set(lossy: lossyDataChannel)
 
-            log("dataChannel.\(String(describing: reliableDataChannel?.label)) : \(String(describing: reliableDataChannel?.channelId))")
-            log("dataChannel.\(String(describing: lossyDataChannel?.label)) : \(String(describing: lossyDataChannel?.channelId))")
+            log("dataChannel.\(String(describing: reliableDataChannel?.label)) : \(String(describing: reliableDataChannel?.channelId))",.warning)
+            log("dataChannel.\(String(describing: lossyDataChannel?.label)) : \(String(describing: lossyDataChannel?.channelId))",.warning)
 
             _state.mutate {
                 $0.subscriber = subscriber
@@ -181,7 +181,7 @@ extension Room {
             }
 
         } else if case .reconnect = connectResponse {
-            log("[Connect] Configuring transports with RECONNECT response...")
+            log("[Connect] Configuring transports with RECONNECT response...",.warning)
             guard let subscriber = _state.subscriber, let publisher = _state.publisher else {
                 log("[Connect] Subscriber or Publisher is nil", .error)
                 return
@@ -202,14 +202,14 @@ extension Room {
     {
         // already matches condition, execute immediately
         if _state.read({ condition($0, nil) }) {
-            log("[execution control] executing immediately...")
+            log("[execution control] executing immediately...",.warning)
             block()
         } else {
             _blockProcessQueue.async { [weak self] in
                 guard let self else { return }
 
                 // create an entry and enqueue block
-                self.log("[execution control] enqueuing entry...")
+                self.log("[execution control] enqueuing entry...",.warning)
 
                 let entry = ConditionalExecutionEntry(executeCondition: condition,
                                                       removeCondition: removeCondition,
@@ -259,7 +259,7 @@ extension Room {
     }
 
     func startReconnect(reason: StartReconnectReason, nextReconnectMode: ReconnectMode? = nil) async throws {
-        log("[Connect] Starting, reason: \(reason)")
+        log("[Connect] Starting, reason: \(reason)  nextReconnectMode: \(String(describing: nextReconnectMode))", .warning)
 
         guard case .connected = _state.connectionState else {
             log("[Connect] Must be called with connected state", .error)
@@ -289,13 +289,15 @@ extension Room {
 
         // quick connect sequence, does not update connection state
         @Sendable func quickReconnectSequence() async throws {
-            log("[Connect] Starting .quick reconnect sequence...", .error)
+            log("[Connect] Starting .quick reconnect sequence...", .warning)
 
             let connectResponse = try await signalClient.connect(url,
                                                                  token,
                                                                  connectOptions: _state.connectOptions,
                                                                  reconnectMode: _state.isReconnectingWithMode,
                                                                  adaptiveStream: _state.roomOptions.adaptiveStream)
+            log("[Connect] connectResponse \(connectResponse)", .warning)
+            
             try Task.checkCancellation()
 
             // Update configuration
@@ -305,7 +307,7 @@ extension Room {
             // Resume after configuring transports...
             await signalClient.resumeQueues()
 
-            log("[Connect] Waiting for subscriber to connect...", .error)
+            log("[Connect] Waiting for subscriber to connect...", .warning)
             // Wait for primary transport to connect (if not already)
             try await primaryTransportConnectedCompleter.wait(timeout: _state.connectOptions.primaryTransportConnectTimeout)
             try Task.checkCancellation()

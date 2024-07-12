@@ -119,7 +119,7 @@ actor SignalClient: Loggable {
         await cleanUp()
 
         if let reconnectMode {
-            log("[Connect] mode: \(String(describing: reconnectMode))")
+            log("[Connect] mode: \(String(describing: reconnectMode))", .warning)
         }
 
         guard let url = Utils.buildUrl(urlString,
@@ -128,13 +128,15 @@ actor SignalClient: Loggable {
                                        reconnectMode: reconnectMode,
                                        adaptiveStream: adaptiveStream)
         else {
+            log("[Connect] Utils.buildUrl: failedToParseUrl)", .error)
             throw LiveKitError(.failedToParseUrl)
+          
         }
 
         if reconnectMode != nil {
-            log("[Connect] with url: \(url)")
+            log("[Connect] with url: \(url)", .warning)
         } else {
-            log("Connecting with url: \(url)")
+            log("Connecting with url: \(url)", .warning)
         }
 
         connectionState = (reconnectMode != nil ? .reconnecting : .connecting)
@@ -143,7 +145,7 @@ actor SignalClient: Loggable {
             let socket = try await WebSocket(url: url)
 
             _messageLoopTask = Task.detached {
-                self.log("Did enter WebSocket message loop...")
+                self.log("Did enter WebSocket message loop...", .warning)
                 do {
                     for try await message in socket {
                         await self._onWebSocketMessage(message: message)
@@ -151,7 +153,7 @@ actor SignalClient: Loggable {
                 } catch {
                     await self.cleanUp(withError: error)
                 }
-                self.log("Did exit WebSocket message loop...")
+                self.log("Did exit WebSocket message loop...", .warning)
             }
 
             let connectResponse = try await _connectResponseCompleter.wait()
@@ -185,19 +187,20 @@ actor SignalClient: Loggable {
                                                    adaptiveStream: adaptiveStream,
                                                    validate: true)
             else {
+                log("Validating with Failed to parse validation url", .error)
                 throw LiveKitError(.failedToParseUrl, message: "Failed to parse validation url")
             }
 
-            log("Validating with url: \(validateUrl)...")
+            log("Validating with url: \(validateUrl)...", .warning)
             let validationResponse = try await HTTP.requestString(from: validateUrl)
-            log("Validate response: \(validationResponse)")
+            log("Validate response: \(validationResponse)", .warning)
             // re-throw with validation response
             throw LiveKitError(.network, message: "Validation response: \"\(validationResponse)\"")
         }
     }
 
     func cleanUp(withError disconnectError: Error? = nil) async {
-        log("withError: \(String(describing: disconnectError))")
+        log("cleanUp withError: \(String(describing: disconnectError))", .error)
 
         _pingIntervalTimer.cancel()
         _pingTimeoutTimer.cancel()
@@ -225,6 +228,7 @@ actor SignalClient: Loggable {
 private extension SignalClient {
     // Send request or enqueue while reconnecting
     func _sendRequest(_ request: Livekit_SignalRequest) async throws {
+        log("_sendRequest connectionState \(connectionState)", .warning)
         guard connectionState != .disconnected else {
             log("connectionState is .disconnected", .error)
             throw LiveKitError(.invalidState, message: "connectionState is .disconnected")

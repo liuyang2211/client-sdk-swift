@@ -34,7 +34,7 @@ extension RTCPeerConnectionState {
 
 extension Room: TransportDelegate {
     func transport(_ transport: Transport, didUpdateState pcState: RTCPeerConnectionState) async {
-        log("target: \(transport.target), connectionState: \(pcState.description)")
+        log("target: \(transport.target), connectionState: \(pcState.description)", .warning)
 
         // primary connected
         if transport.isPrimary {
@@ -68,7 +68,7 @@ extension Room: TransportDelegate {
 
     func transport(_ transport: Transport, didGenerateIceCandidate iceCandidate: LKRTCIceCandidate) async {
         do {
-            log("sending iceCandidate")
+            log("sending iceCandidate",.warning)
             try await signalClient.sendCandidate(candidate: iceCandidate, target: transport.target)
         } catch {
             log("Failed to send iceCandidate, error: \(error)", .error)
