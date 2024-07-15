@@ -166,6 +166,8 @@ actor SignalClient: Loggable {
             // Successfully connected
             _webSocket = socket
             connectionState = .connected
+            
+            self.log("Successfully connected 啊", .warning)
 
             return connectResponse
         } catch {
@@ -285,6 +287,7 @@ private extension SignalClient {
             await _restartPingTimer()
 
         case let .reconnect(response):
+            log("reconnect重连 switch ", .warning)
             _delegate.notifyDetached { await $0.signalClient(self, didReceiveConnectResponse: .reconnect(response)) }
             _connectResponseCompleter.resume(returning: .reconnect(response))
             await _restartPingTimer()
@@ -309,7 +312,7 @@ private extension SignalClient {
             _delegate.notifyDetached { await $0.signalClient(self, didUpdateRoom: update.room) }
 
         case let .trackPublished(trackPublished):
-            log("[publish] resolving completer for cid: \(trackPublished.cid)")
+            log("[publish] resolving completer for cid: \(trackPublished.cid)", .warning)
             // Complete
             await _addTrackCompleters.resume(returning: trackPublished.track, for: trackPublished.cid)
 

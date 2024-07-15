@@ -34,22 +34,34 @@ extension RTCPeerConnectionState {
 
 extension Room: TransportDelegate {
     func transport(_ transport: Transport, didUpdateState pcState: RTCPeerConnectionState) async {
-        log("target: \(transport.target), connectionState: \(pcState.description)", .warning)
+        log("我擦? target: \(transport.target), connectionState: \(pcState.description)", .warning)
 
+        log("transport.isPrimary => true ", .warning)
+        
         // primary connected
         if transport.isPrimary {
+            
             if pcState.isConnected {
+                log("transport.isPrimary => true pcState.isConnected => true", .warning)
+                
                 primaryTransportConnectedCompleter.resume(returning: ())
             } else if pcState.isDisconnected {
+                
+                log("transport.isPrimary => true pcState.isDisconnected => true", .warning)
+                
                 primaryTransportConnectedCompleter.reset()
             }
         }
 
+        log("publisher state => \(transport.target) ", .warning)
+        
         // publisher connected
         if case .publisher = transport.target {
             if pcState.isConnected {
+                log("publisher connected  pcState.isConnected => true", .warning)
                 publisherTransportConnectedCompleter.resume(returning: ())
             } else if pcState.isDisconnected {
+                log("publisher connected  pcState.isDisconnected => true", .warning)
                 publisherTransportConnectedCompleter.reset()
             }
         }
@@ -72,7 +84,7 @@ extension Room: TransportDelegate {
 
     func transport(_ transport: Transport, didGenerateIceCandidate iceCandidate: LKRTCIceCandidate) async {
         do {
-            log("sending iceCandidate",.warning)
+            log("搞事情啊 sending iceCandidate",.warning)
             try await signalClient.sendCandidate(candidate: iceCandidate, target: transport.target)
         } catch {
             log("Failed to send iceCandidate, error: \(error)", .error)
