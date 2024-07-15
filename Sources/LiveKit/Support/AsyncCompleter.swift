@@ -112,8 +112,8 @@ class AsyncCompleter<T>: Loggable {
     }
 
     public func reset() {
-        log("把我 reset 吧 ", .warning)
         _lock.sync {
+            log("把我 reset 吧 ", .warning)
             for entry in _entries.values {
                 entry.cancel()
             }
@@ -123,8 +123,8 @@ class AsyncCompleter<T>: Loggable {
     }
 
     public func resume(with result: Result<T, Error>) {
-        log("resume 我被调用了 result \(String(describing: result))", .warning)
         _lock.sync {
+            log("resume 我被调用了 result \(String(describing: result))", .warning)
             for entry in _entries.values {
                 entry.resume(with: result)
             }
