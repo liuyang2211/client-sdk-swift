@@ -24,9 +24,9 @@ public extension TimeInterval {
     // used for validation mode
     static let defaultHTTPConnect: Self = 5
 
-    static let defaultJoinResponse: Self = 7
-    static let defaultTransportState: Self = 10
-    static let defaultPublisherDataChannelOpen: Self = 7
+    static let defaultJoinResponse: Self = 30
+    static let defaultTransportState: Self = 30
+    static let defaultPublisherDataChannelOpen: Self = 30
     static let resolveSid: Self = 7 + 5 // Join response + 5
     static let defaultPublish: Self = 10
     static let defaultCaptureStart: Self = 5
