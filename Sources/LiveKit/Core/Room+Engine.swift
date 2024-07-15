@@ -384,9 +384,9 @@ extension Room {
                 if totalAttempts == currentAttempt, self._state.nextReconnectMode == nil {
                     
                     
-                    self.log("[Connect] totalAttempts 进来了", .warning)
+                    self.log("[Connect] totalAttempts 进来了,意思是最后一次,我还是让他快速连接", .warning)
                     
-                    self._state.mutate { $0.nextReconnectMode = .full }
+                    self._state.mutate { $0.nextReconnectMode = .quick }
                 }
 
                 let mode: ReconnectMode = self._state.mutate {
