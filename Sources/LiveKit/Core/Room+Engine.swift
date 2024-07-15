@@ -104,6 +104,9 @@ extension Room {
 
 extension Room {
     func configureTransports(connectResponse: SignalClient.ConnectResponse) async throws {
+        
+        log("func configureTransports \(connectResponse)",.warning)
+        
         func makeConfiguration() -> LKRTCConfiguration {
             let connectOptions = _state.connectOptions
 
@@ -312,6 +315,8 @@ extension Room {
             try await configureTransports(connectResponse: connectResponse)
             try Task.checkCancellation()
 
+            log("[Connect] 到这一步了 ", .warning)
+            
             // Resume after configuring transports...
             await signalClient.resumeQueues()
 
@@ -320,9 +325,12 @@ extension Room {
             try await primaryTransportConnectedCompleter.wait(timeout: _state.connectOptions.primaryTransportConnectTimeout)
             try Task.checkCancellation()
 
+            
             // send SyncState before offer
             try await sendSyncState()
 
+            log("[Connect] setIsRestartingIce ", .warning)
+            
             await _state.subscriber?.setIsRestartingIce()
 
             if let publisher = _state.publisher, _state.hasPublished {
@@ -331,6 +339,7 @@ extension Room {
                 try await publisher.createAndSendOffer(iceRestart: true)
                 try await publisherTransportConnectedCompleter.wait(timeout: _state.connectOptions.publisherTransportConnectTimeout)
             }
+            log("[Connect] 完事儿了？ ", .warning)
         }
 
         // "full" re-connection sequence
@@ -431,6 +440,7 @@ extension Room {
 
 extension Room {
     func sendSyncState() async throws {
+        log("sendSyncState ", .warning)
         guard let subscriber = _state.subscriber else {
             log("Subscriber is nil", .error)
             return

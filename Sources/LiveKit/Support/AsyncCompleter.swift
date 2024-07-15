@@ -144,6 +144,7 @@ class AsyncCompleter<T>: Loggable {
     public func wait(timeout: TimeInterval? = nil) async throws -> T {
         // Read value
         if let result = _lock.sync({ _result }) {
+            log("\(String(describing: _result)) _result 是啥呢 ", .warning)
             // Already resolved...
             if case let .success(value) = result {
                 // resume(returning:) already called
@@ -162,6 +163,7 @@ class AsyncCompleter<T>: Loggable {
         // Create a cancel-aware timed continuation
         return try await withTaskCancellationHandler {
             try await withUnsafeThrowingContinuation { continuation in
+                log("continuation 是啥啊 \(continuation)", .warning)
 
                 // Create time-out block
                 let timeoutBlock = DispatchWorkItem { [weak self] in
@@ -169,6 +171,7 @@ class AsyncCompleter<T>: Loggable {
                     self.log("Wait \(entryId) timedOut", .warning)
                     self._lock.sync {
                         if let entry = self._entries[entryId] {
+                            self.log("给我返回了个超时啊", .warning)
                             entry.timeout()
                         }
                         self._entries.removeValue(forKey: entryId)
@@ -178,6 +181,7 @@ class AsyncCompleter<T>: Loggable {
                 _lock.sync {
                     // Schedule time-out block
                     let computedTimeout = (timeout?.toDispatchTimeInterval ?? _defaultTimeout)
+                    log("\(label) Schedule time-out block computedTimeout:\(computedTimeout)", .warning)
                     _timerQueue.asyncAfter(deadline: .now() + computedTimeout, execute: timeoutBlock)
                     // Store entry
                     _entries[entryId] = WaitEntry(continuation: continuation, timeoutBlock: timeoutBlock)

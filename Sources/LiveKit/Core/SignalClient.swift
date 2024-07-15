@@ -147,10 +147,13 @@ actor SignalClient: Loggable {
             _messageLoopTask = Task.detached {
                 self.log("Did enter WebSocket message loop...", .warning)
                 do {
+                    self.log("socket message loop...\(socket)", .warning)
                     for try await message in socket {
+                        self.log("for try await message in socket message\(message)", .warning)
                         await self._onWebSocketMessage(message: message)
                     }
                 } catch {
+                    self.log("为啥没连上呢 error\(error)", .warning)
                     await self.cleanUp(withError: error)
                 }
                 self.log("Did exit WebSocket message loop...", .warning)
