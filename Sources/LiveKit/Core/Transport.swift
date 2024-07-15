@@ -217,7 +217,7 @@ extension Transport {
 
 extension Transport: LKRTCPeerConnectionDelegate {
     nonisolated func peerConnection(_: LKRTCPeerConnection, didChange state: RTCPeerConnectionState) {
-        log("[Connect] Transport(\(target)) did update state: \(state.description)", .warning)
+        log("[Connect] Transport(\(target)) did update state: \(state.description)")
         _delegate.notifyDetached { await $0.transport(self, didUpdateState: state) }
     }
 

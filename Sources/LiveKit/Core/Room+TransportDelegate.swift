@@ -35,6 +35,8 @@ extension RTCPeerConnectionState {
 extension Room: TransportDelegate {
     func transport(_ transport: Transport, didUpdateState pcState: RTCPeerConnectionState) async {
         log("我擦? target: \(transport.target), connectionState: \(pcState.description)", .warning)
+
+        log("transport.isPrimary => true ", .warning)
         
         // primary connected
         if transport.isPrimary {
@@ -71,7 +73,7 @@ extension Room: TransportDelegate {
             // Attempt re-connect if primary or publisher transport failed
             if transport.isPrimary || (_state.hasPublished && transport.target == .publisher), pcState.isDisconnected {
                 do {
-                    log("transport断联类型的重连的根 transport startReconnect)", .warning )
+                    log("transport startReconnect)", .warning )
                     try await startReconnect(reason: .transport)
                 } catch {
                     log("Failed calling startReconnect, error: \(error)", .error)
