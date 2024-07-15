@@ -75,7 +75,7 @@ extension Room {
            oldState.isReconnectingWithMode == .full
         {
             // Did complete a full reconnect
-            log("Re-publishing local tracks...")
+            log("Re-publishing local tracks...", .warning)
             Task.detached { [weak self] in
                 guard let self else { return }
                 do {

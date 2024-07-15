@@ -73,7 +73,7 @@ extension Room: TransportDelegate {
             // Attempt re-connect if primary or publisher transport failed
             if transport.isPrimary || (_state.hasPublished && transport.target == .publisher), pcState.isDisconnected {
                 do {
-                    log("transport startReconnect)", .warning )
+                    log("webrtc流断连引起的 重连 transport startReconnect)", .warning )
                     try await startReconnect(reason: .transport)
                 } catch {
                     log("Failed calling startReconnect, error: \(error)", .error)

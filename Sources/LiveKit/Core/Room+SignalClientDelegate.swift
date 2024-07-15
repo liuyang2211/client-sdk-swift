@@ -38,7 +38,7 @@ extension Room: SignalClientDelegate {
            case .connected = _state.connectionState
         {
             do {
-                log("signalClient startReconnect ", .warning)
+                log("信令websocket断连引起的 重连 signalClient startReconnect ", .warning)
                 try await startReconnect(reason: .websocket)
             } catch {
                 log("Failed calling startReconnect, error: \(error)", .error)
@@ -47,11 +47,12 @@ extension Room: SignalClientDelegate {
     }
 
     func signalClient(_: SignalClient, didReceiveLeave canReconnect: Bool, reason: Livekit_DisconnectReason) async {
-        log("canReconnect: \(canReconnect), reason: \(reason)")
+        log("canReconnect: \(canReconnect), reason: \(reason)", .warning)
 
         if canReconnect {
             // force .full for next reconnect
-            _state.mutate { $0.nextReconnectMode = .full }
+            log("不用.full，全用.quick", .warning)
+            _state.mutate { $0.nextReconnectMode = .quick }
         } else {
             // Server indicates it's not recoverable
             await cleanUp(withError: LiveKitError.from(reason: reason))
