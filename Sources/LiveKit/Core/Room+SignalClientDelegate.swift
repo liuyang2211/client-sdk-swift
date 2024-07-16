@@ -51,8 +51,8 @@ extension Room: SignalClientDelegate {
 
         if canReconnect {
             // force .full for next reconnect
-            log("不用.full，全用.quick", .warning)
-            _state.mutate { $0.nextReconnectMode = .quick }
+            log("还原成.full", .warning)
+            _state.mutate { $0.nextReconnectMode = .full }
         } else {
             // Server indicates it's not recoverable
             await cleanUp(withError: LiveKitError.from(reason: reason))
