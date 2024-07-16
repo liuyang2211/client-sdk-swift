@@ -126,11 +126,12 @@ class AsyncCompleter<T>: Loggable {
         _lock.sync {
             log("resume 我被调用了 result \(String(describing: result))", .warning)
             for entry in _entries.values {
+                log("取消我的定时器吧 entry \(String(describing: entry))", .warning)
                 entry.resume(with: result)
             }
             _entries.removeAll()
-            log("_result 从这里来？？ \(String(describing: _result))", .warning)
             _result = result
+            log("_result 从这里来？？ \(String(describing: _result))", .warning)
         }
     }
 

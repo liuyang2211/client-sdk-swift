@@ -20,8 +20,17 @@ import Foundation
 import Network
 #endif
 
+#if swift(>=5.9)
+internal import LiveKitWebRTC
+#else
+@_implementationOnly import LiveKitWebRTC
+#endif
+
 @objc
 public class Room: NSObject, ObservableObject, Loggable {
+    
+    var peerConnectionState: RTCPeerConnectionState = .disconnected
+    
     // MARK: - MulticastDelegate
 
     public let delegates = MulticastDelegate<RoomDelegate>(label: "RoomDelegate")

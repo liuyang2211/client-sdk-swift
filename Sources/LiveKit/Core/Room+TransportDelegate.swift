@@ -35,8 +35,11 @@ extension RTCPeerConnectionState {
 extension Room: TransportDelegate {
     func transport(_ transport: Transport, didUpdateState pcState: RTCPeerConnectionState) async {
         log("我擦? target: \(transport.target), connectionState: \(pcState.description)", .warning)
-
-        log("transport.isPrimary => true ", .warning)
+        
+        self.peerConnectionState = pcState
+        
+        log("我擦? 赋值 self.peerConnectionState=\(self.peerConnectionState)", .warning)
+        
         
         // primary connected
         if transport.isPrimary {
