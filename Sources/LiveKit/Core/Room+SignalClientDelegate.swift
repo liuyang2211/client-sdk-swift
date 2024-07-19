@@ -168,9 +168,14 @@ extension Room: SignalClientDelegate {
     }
 
     func signalClient(_: SignalClient, didUpdateConnectionQuality connectionQuality: [Livekit_ConnectionQualityInfo]) async {
-        log("connectionQuality: \(connectionQuality)", .trace)
+        log("connectionQuality: \(connectionQuality)", .warning)
 
         for entry in connectionQuality {
+            
+            log("connectionQuality entry : \(entry)", .warning)
+            log("connectionQuality entry.quality : \(entry.quality)", .warning)
+            log("connectionQuality entry.score : \(entry.score)", .warning)
+            
             let participantSid = Participant.Sid(from: entry.participantSid)
             if participantSid == localParticipant.sid {
                 // update for LocalParticipant
