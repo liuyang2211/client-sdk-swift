@@ -66,7 +66,7 @@ extension Room: SignalClientDelegate {
         // Check if dynacast is enabled
         guard _state.roomOptions.dynacast else { return }
 
-        log("[Publish/Backup] Qualities: \(qualities.map { String(describing: $0) }.joined(separator: ", ")), Codecs: \(codecs.map { String(describing: $0) }.joined(separator: ", "))")
+        log("[Publish/Backup] Qualities: \(qualities.map { String(describing: $0) }.joined(separator: ", ")), Codecs: \(codecs.map { String(describing: $0) }.joined(separator: ", "))",.warning)
 
         let trackSid = Track.Sid(from: trackSid)
         guard let publication = localParticipant.trackPublications[trackSid] as? LocalTrackPublication else {

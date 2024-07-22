@@ -115,7 +115,16 @@ extension Room {
 
             // Set iceServers provided by the server
             rtcConfiguration.iceServers = connectResponse.rtcIceServers
-
+            log("connectResponse.rtcIceServers \(connectResponse.rtcIceServers)",.info)
+            connectResponse.rtcIceServers.forEach{
+                log("rtcIceServers urlStrings \($0.urlStrings)",.warning)
+                log("rtcIceServers username \(String(describing: $0.username))",.warning)
+                log("rtcIceServers credential \(String(describing: $0.credential))",.warning)
+                log("rtcIceServers tlsCertPolicy \($0.tlsCertPolicy)",.warning)
+                log("rtcIceServers hostname \(String(describing: $0.hostname))",.warning)
+                log("rtcIceServers tlsAlpnProtocols \($0.tlsAlpnProtocols)",.warning)
+                log("rtcIceServers tlsEllipticCurves \($0.tlsEllipticCurves)",.warning)
+            }
             if !connectOptions.iceServers.isEmpty {
                 // Override with user provided iceServers
                 rtcConfiguration.iceServers = connectOptions.iceServers.map { $0.toRTCType() }

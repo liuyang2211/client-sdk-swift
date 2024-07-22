@@ -88,6 +88,8 @@ extension Room: TransportDelegate {
     func transport(_ transport: Transport, didGenerateIceCandidate iceCandidate: LKRTCIceCandidate) async {
         do {
             log("搞事情啊 sending iceCandidate",.warning)
+            log("搞事情啊 sending iceCandidate sdp: \(iceCandidate.sdp)",.warning)
+            log("搞事情啊 sending iceCandidate serverUrl: \(String(describing: iceCandidate.serverUrl))",.warning)
             try await signalClient.sendCandidate(candidate: iceCandidate, target: transport.target)
         } catch {
             log("Failed to send iceCandidate, error: \(error)", .error)

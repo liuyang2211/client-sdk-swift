@@ -62,6 +62,21 @@ public class TrackStatistics: NSObject, Loggable {
         remoteIceCandidate = remoteIceCandidates.first
 
         super.init()
+        
+        log("localIceCandidates \(localIceCandidates)",.warning)
+        log("localIceCandidate.relayProtocol \(String(describing: localIceCandidate?.relayProtocol))",.warning)
+        log("localIceCandidate.address \(String(describing: localIceCandidate?.address))",.warning)
+        log("localIceCandidate.port \(String(describing: localIceCandidate?.port))",.warning)
+        log("localIceCandidate.candidateType \(String(describing: localIceCandidate?.candidateType))",.warning)
+        log("localIceCandidate.transportId \(String(describing: localIceCandidate?.transportId))",.warning)
+        
+        log("remoteIceCandidates \(remoteIceCandidates)",.warning)
+        log("remoteIceCandidate.relayProtocol \(String(describing: remoteIceCandidate?.relayProtocol))",.warning)
+        log("remoteIceCandidate.address \(String(describing: remoteIceCandidate?.address))",.warning)
+        log("remoteIceCandidate.port \(String(describing: remoteIceCandidate?.port))",.warning)
+        log("remoteIceCandidate.candidateType \(String(describing: remoteIceCandidate?.candidateType))",.warning)
+        log("remoteIceCandidate.transportId \(String(describing: remoteIceCandidate?.transportId))",.warning)
+        
 
         if transportStatistics.count > 1 {
             log("More than 1 TransportStatistics exists", .warning)

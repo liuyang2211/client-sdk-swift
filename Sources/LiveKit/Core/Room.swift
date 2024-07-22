@@ -322,7 +322,7 @@ public class Room: NSObject, ObservableObject, Loggable {
             try await fullConnectSequence(url, token)
 
             // Connect sequence successful
-            log("Connect sequence completed")
+            log("Connect sequence completed",.warning)
 
             // Final check if cancelled, don't fire connected events
             try Task.checkCancellation()
