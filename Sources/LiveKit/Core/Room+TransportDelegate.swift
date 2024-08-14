@@ -34,7 +34,10 @@ extension RTCPeerConnectionState {
 
 extension Room: TransportDelegate {
     func transport(_ transport: Transport, didUpdateState pcState: RTCPeerConnectionState) async {
-        log("target: \(transport.target), connectionState: \(pcState.description)")
+        // changed by liuyang2211 at 2.0.12 Start
+        log("[Transport didUpdateState] target: \(transport.target), isPrimary: \(transport.isPrimary) connectionState: \(pcState.description)", .warning)
+        // changed by liuyang2211 at 2.0.12 End
+
 
         // primary connected
         if transport.isPrimary {

@@ -181,7 +181,10 @@ extension Room {
             }
 
         } else if case .reconnect = connectResponse {
-            log("[Connect] Configuring transports with RECONNECT response...")
+            // changed by liuyang2211 at 2.0.12 Start
+            log("[Connect] Configuring transports with RECONNECT response...", .warning)
+            // changed by liuyang2211 at 2.0.12 End
+
             guard let subscriber = _state.subscriber, let publisher = _state.publisher else {
                 log("[Connect] Subscriber or Publisher is nil", .error)
                 return
@@ -259,25 +262,43 @@ extension Room {
     }
 
     func startReconnect(reason: StartReconnectReason, nextReconnectMode: ReconnectMode? = nil) async throws {
-        log("[Connect] Starting, reason: \(reason)")
+
+        // changed by liuyang2211 at 2.0.12 Start
+        log("[Reconnect] Starting, reason: \(reason)", .warning)
+        // changed by liuyang2211 at 2.0.12 End
 
         guard case .connected = _state.connectionState else {
-            log("[Connect] Must be called with connected state", .error)
+            // changed by liuyang2211 at 2.0.12 Start
+            log("[Reconnect] Must be called with connected state", .error)
+            // changed by liuyang2211 at 2.0.12 End
+
             throw LiveKitError(.invalidState)
         }
 
         guard let url = _state.url, let token = _state.token else {
-            log("[Connect] Url or token is nil", .error)
+
+            // changed by liuyang2211 at 2.0.12 Start
+            log("[Reconnect] Url or token is nil", .error)
+            // changed by liuyang2211 at 2.0.12 End
+
             throw LiveKitError(.invalidState)
         }
 
         guard _state.subscriber != nil, _state.publisher != nil else {
-            log("[Connect] Publisher or subscriber is nil", .error)
+            
+            // changed by liuyang2211 at 2.0.12 Start
+            log("[Reconnect] Publisher or subscriber is nil", .error)
+            // changed by liuyang2211 at 2.0.12 End
+
             throw LiveKitError(.invalidState)
         }
 
         guard _state.isReconnectingWithMode == nil else {
-            log("[Connect] Reconnect already in progress...", .warning)
+            
+            // changed by liuyang2211 at 2.0.12 Start
+            log("[Reconnect] Reconnect already in progress...", .warning)
+            // changed by liuyang2211 at 2.0.12 End
+
             throw LiveKitError(.invalidState)
         }
 
@@ -289,7 +310,17 @@ extension Room {
 
         // quick connect sequence, does not update connection state
         @Sendable func quickReconnectSequence() async throws {
-            log("[Connect] Starting .quick reconnect sequence...")
+            
+            // changed by liuyang2211 at 2.0.12 Start
+            log("[Reconnect .quick] Starting .quick reconnect sequence...",.warning)
+            
+            // add by liuyang2211 更新重连状态,第一时间发送代理
+            _state.mutate {
+                // Mark as Re-connecting
+                $0.connectionState = .reconnecting
+            }
+            // changed by liuyang2211 at 2.0.12 End
+
 
             let connectResponse = try await signalClient.connect(url,
                                                                  token,
@@ -305,28 +336,65 @@ extension Room {
             // Resume after configuring transports...
             await signalClient.resumeQueues()
 
-            log("[Connect] Waiting for subscriber to connect...")
-            // Wait for primary transport to connect (if not already)
-            try await primaryTransportConnectedCompleter.wait(timeout: _state.connectOptions.primaryTransportConnectTimeout)
-            try Task.checkCancellation()
-
+            // changed by liuyang2211 at 2.0.12 Start
+            // subscriber connectionState == 2 时 不必定时等待回调，因为当切换网络是transport可能会先于websocket连接
+            // 代理已经发过了
+            log("[Reconnect .quick] check subscriber connectionState...",.warning)
+            
+            if let subscriber = _state.subscriber {
+                
+                log("[Reconnect .quick] \nsubscriber: \(subscriber) \nsubscriber.isPrimary: \(subscriber.isPrimary) \nsubscriber.isConnected: \(await subscriber.isConnected) \nsubscriber.connectionState: \(await subscriber.connectionState)",.warning)
+                
+                let transportConnectionState = await subscriber.connectionState
+                if transportConnectionState != .connected {
+                    log("[Reconnect .quick] Wait for primary transport to connect...",.warning)
+                    // Wait for primary transport to connect (if not already)
+                    try await primaryTransportConnectedCompleter.wait(timeout: _state.connectOptions.primaryTransportConnectTimeout)
+                    try Task.checkCancellation()
+                }else{
+                    log("[Reconnect .quick] primary transport connected...",.warning)
+                }
+            }
+            
+            // changed by liuyang2211 at 2.0.12 End
+            
             // send SyncState before offer
             try await sendSyncState()
 
             await _state.subscriber?.setIsRestartingIce()
+            
+            
+            // changed by liuyang2211 at 2.0.12 Start
+            
+            log("[Reconnect .quick] check publisher connectionState...",.warning)
+
 
             if let publisher = _state.publisher, _state.hasPublished {
-                // Only if published, wait for publisher to connect...
-                log("[Connect] Waiting for publisher to connect...")
-                try await publisher.createAndSendOffer(iceRestart: true)
-                try await publisherTransportConnectedCompleter.wait(timeout: _state.connectOptions.publisherTransportConnectTimeout)
+                
+                log("[Reconnect .quick] \npublisher: \(publisher) \npublisher.isPrimary: \(publisher.isPrimary) \npublisher.isConnected: \(await publisher.isConnected) \npublisher.connectionState: \(await publisher.connectionState)",.warning)
+                
+                let transportConnectionState = await publisher.connectionState
+                if transportConnectionState != .connected {
+                    log("[Reconnect .quick] Waiting for publisher to connect...",.warning)
+                    // Wait for primary transport to connect (if not already)
+                    try await publisher.createAndSendOffer(iceRestart: true)
+                    try await publisherTransportConnectedCompleter.wait(timeout: _state.connectOptions.publisherTransportConnectTimeout)
+                }else {
+                    log("[Reconnect .quick] publisher connected...",.warning)
+                }
             }
+            
+            // changed by liuyang2211 at 2.0.12 End
+
         }
 
         // "full" re-connection sequence
         // as a last resort, try to do a clean re-connection and re-publish existing tracks
         @Sendable func fullReconnectSequence() async throws {
-            log("[Connect] starting .full reconnect sequence...")
+            // changed by liuyang2211 at 2.0.12 Start
+            log("[Reconnect] starting .full reconnect sequence...", .warning)
+            // changed by liuyang2211 at 2.0.12 End
+
 
             _state.mutate {
                 // Mark as Re-connecting
@@ -338,7 +406,10 @@ extension Room {
             guard let url = _state.url,
                   let token = _state.token
             else {
-                log("[Connect] Url or token is nil")
+                // changed by liuyang2211 at 2.0.12 Start
+                log("[Reconnect] Url or token is nil", .warning)
+                // changed by liuyang2211 at 2.0.12 End
+
                 throw LiveKitError(.invalidState)
             }
 
@@ -352,18 +423,33 @@ extension Room {
 
                 // Not reconnecting state anymore
                 guard let currentMode = self._state.isReconnectingWithMode else {
-                    self.log("[Connect] Not in reconnect state anymore, exiting retry cycle.")
+                    // changed by liuyang2211 at 2.0.12 Start
+                    self.log("[Reconnect] Not in reconnect state anymore, exiting retry cycle.", .warning)
+                    // changed by liuyang2211 at 2.0.12 End
+
                     return
                 }
-
+                
+                // changed by liuyang2211 at 2.0.12 Start
+                self.log("[Reconnect] currentMode:\(currentMode)", .warning)
+                // changed by liuyang2211 at 2.0.12 End
+                
                 // Full reconnect failed, give up
                 guard currentMode != .full else { return }
 
-                self.log("[Connect] Retry in \(self._state.connectOptions.reconnectAttemptDelay) seconds, \(currentAttempt)/\(totalAttempts) tries left.")
+                // changed by liuyang2211 at 2.0.12 Start
+                self.log("[Reconnect] Retry in \(self._state.connectOptions.reconnectAttemptDelay) seconds, \(currentAttempt)/\(totalAttempts) tries left.",.warning)
+                self.log("[Reconnect] nextReconnectMode:\(String(describing: self._state.nextReconnectMode))", .warning)
+                // changed by liuyang2211 at 2.0.12 End
 
                 // Try full reconnect for the final attempt
                 if totalAttempts == currentAttempt, self._state.nextReconnectMode == nil {
-                    self._state.mutate { $0.nextReconnectMode = .full }
+                    // changed by liuyang2211 at 2.0.12 Start
+                    // changed by liuyang2211, 全部采用快速连接方式
+                    self._state.mutate { $0.nextReconnectMode = .quick }
+                    
+                    self.log("[Reconnect] final attempt nextReconnectMode:\(String(describing: self._state.nextReconnectMode))", .warning)
+                    // changed by liuyang2211 at 2.0.12 End
                 }
 
                 let mode: ReconnectMode = self._state.mutate {
@@ -372,6 +458,11 @@ extension Room {
                     $0.nextReconnectMode = nil
                     return mode
                 }
+                
+                // changed by liuyang2211 at 2.0.12 Start
+                self.log("[Reconnect] Reconnect mode:\(mode)", .warning)
+                // changed by liuyang2211 at 2.0.12 End
+
 
                 do {
                     if case .quick = mode {
@@ -380,21 +471,30 @@ extension Room {
                         try await fullReconnectSequence()
                     }
                 } catch {
-                    self.log("[Connect] Reconnect mode: \(mode) failed with error: \(error)", .error)
+                    // changed by liuyang2211 at 2.0.12 Start
+                    self.log("[Reconnect] Reconnect mode: \(mode) failed with error: \(error)", .error)
+                    // changed by liuyang2211 at 2.0.12 End
+
                     // Re-throw
                     throw error
                 }
             }.value
 
             // Re-connect sequence successful
-            log("[Connect] Sequence completed")
+            // changed by liuyang2211 at 2.0.12 Start
+            log("[Reconnect] Sequence completed", .warning)
+            // changed by liuyang2211 at 2.0.12 End
+
             _state.mutate {
                 $0.connectionState = .connected
                 $0.isReconnectingWithMode = nil
                 $0.nextReconnectMode = nil
             }
         } catch {
-            log("[Connect] Sequence failed with error: \(error)")
+            // changed by liuyang2211 at 2.0.12 Start
+            log("[Reconnect] Sequence failed with error: \(error)" , .error)
+            // changed by liuyang2211 at 2.0.12 End
+
 
             if !Task.isCancelled {
                 // Finally disconnect if all attempts fail

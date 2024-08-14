@@ -356,7 +356,10 @@ extension Room {
     func cleanUp(withError disconnectError: Error? = nil,
                  isFullReconnect: Bool = false) async
     {
-        log("withError: \(String(describing: disconnectError)), isFullReconnect: \(isFullReconnect)")
+        // changed by liuyang2211 at 2.0.12 Start
+        log("withError: \(String(describing: disconnectError)), isFullReconnect: \(isFullReconnect)", .warning)
+        // changed by liuyang2211 at 2.0.12 End
+
 
         // Reset completers
         _sidCompleter.reset()
