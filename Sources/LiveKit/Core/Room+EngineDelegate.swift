@@ -24,6 +24,11 @@ internal import LiveKitWebRTC
 
 extension Room {
     func engine(_: Room, didMutateState state: Room.State, oldState: Room.State) {
+        
+        // changed by liuyang2211 at 2.0.13 Start
+        self.log("[didMutateState] state.connectionState:\(state.connectionState) oldState.connectionState:\(oldState.connectionState) oldState.isReconnectingWithMode:\(String(describing: oldState.isReconnectingWithMode))", .warning)
+        // changed by liuyang2211 at 2.0.13 End
+        
         if state.connectionState != oldState.connectionState {
             // connectionState did update
 
@@ -75,7 +80,9 @@ extension Room {
            oldState.isReconnectingWithMode == .full
         {
             // Did complete a full reconnect
-            log("Re-publishing local tracks...")
+            // changed by liuyang2211 at 2.0.13 Start
+            log("Re-publishing local tracks...", .warning)
+            // changed by liuyang2211 at 2.0.13 End
             Task.detached { [weak self] in
                 guard let self else { return }
                 do {
