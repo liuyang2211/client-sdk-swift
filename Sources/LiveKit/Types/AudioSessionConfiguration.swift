@@ -36,13 +36,24 @@ public extension AudioSessionConfiguration {
                                                     categoryOptions: [.mixWithOthers],
                                                     mode: .spokenAudio)
 
+    /// Changed by liuyang 2.0.16 Start
     static let playAndRecordSpeaker = AudioSessionConfiguration(category: .playAndRecord,
-                                                                categoryOptions: [.allowBluetooth, .allowBluetoothA2DP, .allowAirPlay],
-                                                                mode: .videoChat)
+                                                                categoryOptions: [
+                                                                    .defaultToSpeaker,
+                                                                    .duckOthers,
+                                                                    .allowBluetooth,
+                                                                    .allowBluetoothA2DP,
+                                                                    .allowAirPlay],
+                                                                mode: .voiceChat)
 
     static let playAndRecordReceiver = AudioSessionConfiguration(category: .playAndRecord,
-                                                                 categoryOptions: [.allowBluetooth, .allowBluetoothA2DP, .allowAirPlay],
+                                                                 categoryOptions: [
+                                                                    .duckOthers,
+                                                                    .allowBluetooth,
+                                                                    .allowBluetoothA2DP,
+                                                                    .allowAirPlay],
                                                                  mode: .voiceChat)
+    /// Changed by liuyang  2.0.16 End
 }
 
 @objc
