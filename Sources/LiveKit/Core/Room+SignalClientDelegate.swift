@@ -45,7 +45,7 @@ extension Room: SignalClientDelegate {
     }
 
     func signalClient(_: SignalClient, didReceiveLeave canReconnect: Bool, reason: Livekit_DisconnectReason) async {
-        log("canReconnect: \(canReconnect), reason: \(reason)")
+        log("canReconnect: \(canReconnect), reason: \(reason)", .warning)
 
         if canReconnect {
             // force .full for next reconnect
