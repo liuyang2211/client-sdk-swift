@@ -37,10 +37,16 @@ class AudioRendererAdapter: NSObject, LKRTCAudioRenderer {
     private weak var target: AudioRenderer?
 
     init(target: AudioRenderer) {
+        
+        print("AudioRendererAdapter init target = \(target)")
+        
         self.target = target
     }
 
     func render(sampleBuffer: CMSampleBuffer) {
+        
+        print("AudioRendererAdapter render sampleBuffer")
+        
         target?.render?(sampleBuffer: sampleBuffer)
     }
 
