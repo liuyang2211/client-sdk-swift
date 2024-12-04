@@ -42,7 +42,7 @@ public extension LKAudioBuffer {
         }
         
         guard let pcmBuffer = AVAudioPCMBuffer(pcmFormat: audioFormat,
-                                               frameCapacity: AVAudioFrameCount(16000)) else {
+                                               frameCapacity: AVAudioFrameCount(160)) else {
             print("pcmBuffer = nil")
               return nil
           }
