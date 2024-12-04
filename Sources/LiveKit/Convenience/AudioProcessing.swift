@@ -28,9 +28,14 @@ public extension LKAudioBuffer {
     /// Convert to AVAudioPCMBuffer float buffer will be normalized to 32 bit.
     @objc
     func toAVAudioPCMBuffer() -> AVAudioPCMBuffer? {
-        guard let audioFormat = AVAudioFormat(commonFormat: .pcmFormatFloat32,
-                                              sampleRate: Double(frames * 100),
-                                              channels: AVAudioChannelCount(channels),
+        
+        print("frames = \(frames)")
+        print("Double(frames * 100) = \(Double(frames * 100))")
+        print("channels = \(channels)")
+        
+        guard let audioFormat = AVAudioFormat(commonFormat: .pcmFormatInt16,
+                                              sampleRate: Double(16),
+                                              channels: AVAudioChannelCount(1),
                                               interleaved: false),
             let pcmBuffer = AVAudioPCMBuffer(pcmFormat: audioFormat,
                                              frameCapacity: AVAudioFrameCount(frames))
