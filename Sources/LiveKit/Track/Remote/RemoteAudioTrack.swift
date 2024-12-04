@@ -15,6 +15,7 @@
  */
 
 import CoreMedia
+import AVFAudio
 
 #if swift(>=5.9)
 internal import LiveKitWebRTC
@@ -96,6 +97,13 @@ extension RemoteAudioTrack: AudioRenderer {
     public func render(sampleBuffer: CMSampleBuffer) {
         _rendererState.audioRenderers.notify { audioRenderer in
             audioRenderer.render?(sampleBuffer: sampleBuffer)
+        }
+    }
+    
+    public func render(pcmBuffer: AVAudioPCMBuffer) {
+        print("come on pcmBuffer")
+        _rendererState.audioRenderers.notify { audioRenderer in
+            audioRenderer.render?(pcmBuffer: pcmBuffer)
         }
     }
 }
