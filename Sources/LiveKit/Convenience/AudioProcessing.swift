@@ -32,20 +32,36 @@ public extension LKAudioBuffer {
         print("frames = \(frames)")
         print("Double(frames * 100) = \(Double(frames * 100))")
         print("channels = \(channels)")
-        
-        guard let audioFormat = AVAudioFormat(commonFormat: .pcmFormatInt16,
+   
+        guard let audioFormat = AVAudioFormat(commonFormat: .pcmFormatFloat32,
                                               sampleRate: Double(16000),
                                               channels: AVAudioChannelCount(channels),
-                                              interleaved: false),
-            let pcmBuffer = AVAudioPCMBuffer(pcmFormat: audioFormat,
-                                             frameCapacity: AVAudioFrameCount(16000))
-        else {
+                                              interleaved: false) else {
+            print("audioFormat = nil")
             return nil
         }
+        
+        guard let pcmBuffer = AVAudioPCMBuffer(pcmFormat: audioFormat,
+                                               frameCapacity: AVAudioFrameCount(16000)) else {
+            print("pcmBuffer = nil")
+              return nil
+          }
+//        guard let audioFormat = AVAudioFormat(commonFormat: .pcmFormatInt16,
+//                                              sampleRate: Double(16000),
+//                                              channels: AVAudioChannelCount(channels),
+//                                              interleaved: false),
+//            let pcmBuffer = AVAudioPCMBuffer(pcmFormat: audioFormat,
+//                                             frameCapacity: AVAudioFrameCount(16000))
+//        else {
+//            return nil
+//        }
 
         pcmBuffer.frameLength = AVAudioFrameCount(16000)
 
-        guard let targetBufferPointer = pcmBuffer.floatChannelData else { return nil }
+        guard let targetBufferPointer = pcmBuffer.floatChannelData else {
+            print("targetBufferPointer = nil")
+            return nil
+        }
 
         // Optimized version
         var normalizationFactor: Float = 1.0 / 32768.0
