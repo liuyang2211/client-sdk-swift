@@ -46,17 +46,18 @@ public extension LKAudioBuffer {
             print("pcmBuffer = nil")
               return nil
           }
-//        guard let audioFormat = AVAudioFormat(commonFormat: .pcmFormatInt16,
-//                                              sampleRate: Double(16000),
-//                                              channels: AVAudioChannelCount(channels),
-//                                              interleaved: false),
-//            let pcmBuffer = AVAudioPCMBuffer(pcmFormat: audioFormat,
-//                                             frameCapacity: AVAudioFrameCount(16000))
-//        else {
-//            return nil
-//        }
+        guard let audioFormat = AVAudioFormat(commonFormat: .pcmFormatFloat32,
+                                              sampleRate: Double(frames * 100),
+                                              channels: AVAudioChannelCount(channels),
+                                              interleaved: false),
+            let pcmBuffer = AVAudioPCMBuffer(pcmFormat: audioFormat,
+                                             frameCapacity: AVAudioFrameCount(160))
+        else {
+            return nil
+        }
 
-        pcmBuffer.frameLength = AVAudioFrameCount(16000)
+//        pcmBuffer.frameLength = AVAudioFrameCount(frames)
+        pcmBuffer.frameLength = AVAudioFrameCount(160)
 
         guard let targetBufferPointer = pcmBuffer.floatChannelData else {
             print("targetBufferPointer = nil")
@@ -72,7 +73,7 @@ public extension LKAudioBuffer {
                        &normalizationFactor,
                        targetBufferPointer[i],
                        1,
-                       vDSP_Length(16000))
+                       vDSP_Length(160))
         }
 
         return pcmBuffer
