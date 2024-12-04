@@ -28,41 +28,19 @@ public extension LKAudioBuffer {
     /// Convert to AVAudioPCMBuffer float buffer will be normalized to 32 bit.
     @objc
     func toAVAudioPCMBuffer() -> AVAudioPCMBuffer? {
-        
-        print("frames = \(frames)")
-        print("Double(frames * 100) = \(Double(frames * 100))")
-        print("channels = \(channels)")
-   
-        guard let audioFormat = AVAudioFormat(commonFormat: .pcmFormatFloat32,
-                                              sampleRate: Double(16000),
-                                              channels: AVAudioChannelCount(channels),
-                                              interleaved: false) else {
-            print("audioFormat = nil")
-            return nil
-        }
-        
-        guard let pcmBuffer = AVAudioPCMBuffer(pcmFormat: audioFormat,
-                                               frameCapacity: AVAudioFrameCount(160)) else {
-            print("pcmBuffer = nil")
-              return nil
-          }
         guard let audioFormat = AVAudioFormat(commonFormat: .pcmFormatFloat32,
                                               sampleRate: Double(frames * 100),
                                               channels: AVAudioChannelCount(channels),
                                               interleaved: false),
             let pcmBuffer = AVAudioPCMBuffer(pcmFormat: audioFormat,
-                                             frameCapacity: AVAudioFrameCount(160))
+                                             frameCapacity: AVAudioFrameCount(frames))
         else {
             return nil
         }
 
-//        pcmBuffer.frameLength = AVAudioFrameCount(frames)
-        pcmBuffer.frameLength = AVAudioFrameCount(160)
+        pcmBuffer.frameLength = AVAudioFrameCount(frames)
 
-        guard let targetBufferPointer = pcmBuffer.floatChannelData else {
-            print("targetBufferPointer = nil")
-            return nil
-        }
+        guard let targetBufferPointer = pcmBuffer.floatChannelData else { return nil }
 
         // Optimized version
         var normalizationFactor: Float = 1.0 / 32768.0
@@ -73,7 +51,7 @@ public extension LKAudioBuffer {
                        &normalizationFactor,
                        targetBufferPointer[i],
                        1,
-                       vDSP_Length(160))
+                       vDSP_Length(frames))
         }
 
         return pcmBuffer
