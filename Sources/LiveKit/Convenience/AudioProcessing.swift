@@ -38,12 +38,12 @@ public extension LKAudioBuffer {
                                               channels: AVAudioChannelCount(channels),
                                               interleaved: false),
             let pcmBuffer = AVAudioPCMBuffer(pcmFormat: audioFormat,
-                                             frameCapacity: AVAudioFrameCount(frames))
+                                             frameCapacity: AVAudioFrameCount(16000))
         else {
             return nil
         }
 
-        pcmBuffer.frameLength = AVAudioFrameCount(frames)
+        pcmBuffer.frameLength = AVAudioFrameCount(16000)
 
         guard let targetBufferPointer = pcmBuffer.floatChannelData else { return nil }
 
@@ -56,7 +56,7 @@ public extension LKAudioBuffer {
                        &normalizationFactor,
                        targetBufferPointer[i],
                        1,
-                       vDSP_Length(frames))
+                       vDSP_Length(16000))
         }
 
         return pcmBuffer
