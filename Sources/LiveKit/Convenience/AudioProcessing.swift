@@ -34,8 +34,8 @@ public extension LKAudioBuffer {
         print("channels = \(channels)")
         
         guard let audioFormat = AVAudioFormat(commonFormat: .pcmFormatInt16,
-                                              sampleRate: Double(16),
-                                              channels: AVAudioChannelCount(1),
+                                              sampleRate: Double(16000),
+                                              channels: AVAudioChannelCount(channels),
                                               interleaved: false),
             let pcmBuffer = AVAudioPCMBuffer(pcmFormat: audioFormat,
                                              frameCapacity: AVAudioFrameCount(frames))
