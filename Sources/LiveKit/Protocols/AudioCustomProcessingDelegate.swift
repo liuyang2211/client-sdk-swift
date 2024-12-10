@@ -70,22 +70,12 @@ class AudioCustomProcessingDelegateAdapter: NSObject, LKRTCAudioCustomProcessing
 
     func audioProcessingProcess(audioBuffer: LKRTCAudioBuffer) {
         let lkAudioBuffer = LKAudioBuffer(audioBuffer: audioBuffer)
-
-        print("audioBuffer channels = \(lkAudioBuffer.channels)")
-        print("audioBuffer frames = \(lkAudioBuffer.frames)")
-        print("audioBuffer framesPerBand = \(lkAudioBuffer.framesPerBand)")
-        print("audioBuffer bands = \(lkAudioBuffer.bands)")
-        print("audioBuffer bands = \(lkAudioBuffer.bands)")
-        print("audioProcessingProcess target = \(target)")
         
         target?.audioProcessingProcess(audioBuffer: lkAudioBuffer)
-        
-        print("audioRenderers = \(audioRenderers)")
 
         // Convert to pcmBuffer and notify only if an audioRenderer is added.
         if audioRenderers.isDelegatesNotEmpty, let pcmBuffer = lkAudioBuffer.toAVAudioPCMBuffer() {
             audioRenderers.notify {
-                print("audioRenderers.notify = \($0)")
                 $0.render?(pcmBuffer: pcmBuffer)
             }
         }
