@@ -327,6 +327,11 @@ public extension LocalParticipant {
                 if source == .camera {
                     let localTrack = LocalVideoTrack.createCameraTrack(options: (captureOptions as? CameraCaptureOptions) ?? room._state.roomOptions.defaultCameraCaptureOptions,
                                                                        reportStatistics: room._state.roomOptions.reportRemoteTrackStatistics)
+                    // TODO: liuyang 增加多摄像头任务处理
+                    if let cameraCapturer = localTrack.capturer as? CameraCapturer, cameraCapturer.isMultitaskingAccessSupported {
+                        cameraCapturer.isMultitaskingAccessEnabled = true
+                        print("支持多摄像头任务，并开启 isMultitaskingAccessEnabled = \(cameraCapturer.isMultitaskingAccessEnabled)")
+                    }
                     return try await self._publish(track: localTrack, options: publishOptions)
                 } else if source == .microphone {
                     let localTrack = LocalAudioTrack.createTrack(options: (captureOptions as? AudioCaptureOptions) ?? room._state.roomOptions.defaultAudioCaptureOptions,
