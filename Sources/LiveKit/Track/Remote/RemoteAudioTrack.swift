@@ -138,23 +138,24 @@ extension RemoteAudioTrack: AudioRenderer {
             return nil
         }
         
-        let streamDescription = CMAudioFormatDescriptionGetStreamBasicDescription(formatDescription)
-        
-        // 创建 AVAudioFormat 对象 - 修复指针转换问题
-        guard let asbd = streamDescription else {
+        // 获取音频流描述
+        guard let streamDesc = CMAudioFormatDescriptionGetStreamBasicDescription(formatDescription) else {
             print("无法获取音频流描述")
             return nil
         }
         
-        let audioFormat = AVAudioFormat(commonFormat: .pcmFormatInt16,
-                                           sampleRate: Double(asbd.pointee.mSampleRate),
-                                           channels: AVAudioChannelCount(asbd.pointee.mChannelsPerFrame),
-                                           interleaved: asbd.pointee.mFormatFlags & kAudioFormatFlagIsNonInterleaved == 0)
+        // 创建 AVAudioFormat 对象（安全解包）
+        let audioFormat = AVAudioFormat(
+            commonFormat: .pcmFormatFloat32,
+            sampleRate: Double(streamDesc.pointee.mSampleRate),
+            channels: AVAudioChannelCount(streamDesc.pointee.mChannelsPerFrame),
+            interleaved: streamDesc.pointee.mFormatFlags & kAudioFormatFlagIsNonInterleaved == 0
+        )
         
         // 获取样本帧数
         let frameCount = CMSampleBufferGetNumSamples(sampleBuffer)
         
-        // 创建 AVAudioPCMBuffer
+        // 创建 AVAudioPCMBuffer（安全解包）
         guard let pcmBuffer = AVAudioPCMBuffer(pcmFormat: audioFormat, frameCapacity: AVAudioFrameCount(frameCount)) else {
             print("创建 AVAudioPCMBuffer 失败")
             return nil
@@ -163,7 +164,7 @@ extension RemoteAudioTrack: AudioRenderer {
         pcmBuffer.frameLength = AVAudioFrameCount(frameCount)
         
         // 获取音频缓冲区列表
-        var bufferList: AudioBufferList = AudioBufferList()
+        var bufferList = AudioBufferList()
         var blockBuffer: CMBlockBuffer?
         
         let status = CMSampleBufferGetAudioBufferListWithRetainedBlockBuffer(
@@ -182,31 +183,27 @@ extension RemoteAudioTrack: AudioRenderer {
             return nil
         }
         
-        // 复制音频数据到 PCMBuffer
-        let bufferListPointer = UnsafeMutableAudioBufferListPointer(&bufferList)
-        
-        for buffer in bufferListPointer {
-            let audioData = buffer.mData!
-            let dataSize = buffer.mDataByteSize
+        // 处理单声道和立体声
+        if audioFormat.channelCount == 1, let data = bufferList.mBuffers.mData {
+            // 单声道
+            let channelData = pcmBuffer.floatChannelData![0]
+            let byteSize = Int(bufferList.mBuffers.mDataByteSize)
+            memcpy(channelData, data, byteSize)
+        } else if audioFormat.channelCount == 2, let data = bufferList.mBuffers.mData {
+            // 立体声
+            let leftChannelData = pcmBuffer.floatChannelData![0]
+            let rightChannelData = pcmBuffer.floatChannelData![1]
             
-            if audioFormat.channelCount == 1 {
-                // 单声道
-                let channelData = pcmBuffer.floatChannelData![0]
-                memcpy(channelData, audioData, Int(dataSize))
-            } else if audioFormat.channelCount == 2 {
-                // 立体声
-                let leftChannelData = pcmBuffer.floatChannelData![0]
-                let rightChannelData = pcmBuffer.floatChannelData![1]
-                
-                // 假设是交错的立体声数据
-                let interleavedData = audioData.assumingMemoryBound(to: Float.self)
-                let frameCount = Int(dataSize) / (MemoryLayout<Float>.size * 2)
-                
-                for j in 0..<frameCount {
-                    leftChannelData[j] = interleavedData[j * 2]
-                    rightChannelData[j] = interleavedData[j * 2 + 1]
-                }
+            let floatData = data.assumingMemoryBound(to: Float.self)
+            let frameCount = Int(bufferList.mBuffers.mDataByteSize) / (MemoryLayout<Float>.size * 2)
+            
+            for i in 0..<frameCount {
+                leftChannelData[i] = floatData[i * 2]
+                rightChannelData[i] = floatData[i * 2 + 1]
             }
+        } else {
+            print("不支持的声道数: \(audioFormat.channelCount)")
+            return nil
         }
         
         return pcmBuffer
