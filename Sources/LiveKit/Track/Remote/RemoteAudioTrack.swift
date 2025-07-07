@@ -144,7 +144,7 @@ extension RemoteAudioTrack: AudioRenderer {
             return nil
         }
         
-        // 创建 AVAudioFormat 对象（安全解包）
+        // 创建 AVAudioFormat 对象（修复可选值问题）
         let audioFormat = AVAudioFormat(
             commonFormat: .pcmFormatFloat32,
             sampleRate: Double(streamDesc.pointee.mSampleRate),
@@ -152,11 +152,17 @@ extension RemoteAudioTrack: AudioRenderer {
             interleaved: streamDesc.pointee.mFormatFlags & kAudioFormatFlagIsNonInterleaved == 0
         )
         
+        // 安全解包 audioFormat
+        guard let format = audioFormat else {
+            print("创建 AVAudioFormat 失败")
+            return nil
+        }
+        
         // 获取样本帧数
         let frameCount = CMSampleBufferGetNumSamples(sampleBuffer)
         
-        // 创建 AVAudioPCMBuffer（安全解包）
-        guard let pcmBuffer = AVAudioPCMBuffer(pcmFormat: audioFormat, frameCapacity: AVAudioFrameCount(frameCount)) else {
+        // 创建 AVAudioPCMBuffer
+        guard let pcmBuffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: AVAudioFrameCount(frameCount)) else {
             print("创建 AVAudioPCMBuffer 失败")
             return nil
         }
@@ -184,12 +190,12 @@ extension RemoteAudioTrack: AudioRenderer {
         }
         
         // 处理单声道和立体声
-        if audioFormat.channelCount == 1, let data = bufferList.mBuffers.mData {
+        if format.channelCount == 1, let data = bufferList.mBuffers.mData {
             // 单声道
             let channelData = pcmBuffer.floatChannelData![0]
             let byteSize = Int(bufferList.mBuffers.mDataByteSize)
             memcpy(channelData, data, byteSize)
-        } else if audioFormat.channelCount == 2, let data = bufferList.mBuffers.mData {
+        } else if format.channelCount == 2, let data = bufferList.mBuffers.mData {
             // 立体声
             let leftChannelData = pcmBuffer.floatChannelData![0]
             let rightChannelData = pcmBuffer.floatChannelData![1]
@@ -202,7 +208,7 @@ extension RemoteAudioTrack: AudioRenderer {
                 rightChannelData[i] = floatData[i * 2 + 1]
             }
         } else {
-            print("不支持的声道数: \(audioFormat.channelCount)")
+            print("不支持的声道数: \(format.channelCount)")
             return nil
         }
         
