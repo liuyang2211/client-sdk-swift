@@ -119,6 +119,7 @@ extension RemoteAudioTrack: AudioRenderer {
     public func render(sampleBuffer: CMSampleBuffer) {
         _rendererState.audioRenderers.notify { audioRenderer in
             audioRenderer.render?(sampleBuffer: sampleBuffer)
+            print("pcmBuffer：%@",self.convertSampleBufferToPCMBuffer(sampleBuffer: sampleBuffer))
         }
     }
     
@@ -128,6 +129,87 @@ extension RemoteAudioTrack: AudioRenderer {
         _rendererState.audioRenderers.notify { audioRenderer in
             audioRenderer.render?(pcmBuffer: pcmBuffer)
         }
+    }
+    
+    func convertSampleBufferToPCMBuffer(sampleBuffer: CMSampleBuffer) -> AVAudioPCMBuffer? {
+        // 获取音频格式描述
+        guard let formatDescription = CMSampleBufferGetFormatDescription(sampleBuffer) else {
+            print("获取音频格式描述失败")
+            return nil
+        }
+        
+        let streamDescription = CMAudioFormatDescriptionGetStreamBasicDescription(formatDescription)
+        
+        // 创建 AVAudioFormat 对象
+        guard let audioFormat = AVAudioFormat(streamDescription: streamDescription.pointee) else {
+            print("创建 AVAudioFormat 失败")
+            return nil
+        }
+        
+        // 获取样本帧数
+        let frameCount = CMSampleBufferGetNumSamples(sampleBuffer)
+        
+        // 创建 AVAudioPCMBuffer
+        guard let pcmBuffer = AVAudioPCMBuffer(pcmFormat: audioFormat, frameCapacity: AVAudioFrameCount(frameCount)) else {
+            print("创建 AVAudioPCMBuffer 失败")
+            return nil
+        }
+        
+        pcmBuffer.frameLength = AVAudioFrameCount(frameCount)
+        
+        // 获取音频缓冲区列表
+        var bufferList: AudioBufferList = AudioBufferList()
+        var blockBuffer: CMBlockBuffer?
+        
+        let status = CMSampleBufferGetAudioBufferListWithRetainedBlockBuffer(
+            sampleBuffer,
+            bufferListSizeNeededOut: nil,
+            bufferListOut: &bufferList,
+            bufferListSize: MemoryLayout<AudioBufferList>.size,
+            blockBufferAllocator: nil,
+            blockBufferMemoryAllocator: nil,
+            flags: kCMSampleBufferFlag_AudioBufferList_Assure16ByteAlignment,
+            blockBufferOut: &blockBuffer
+        )
+        
+        guard status == noErr else {
+            print("获取音频缓冲区列表失败: \(status)")
+            return nil
+        }
+        
+        // 确保 blockBuffer 被释放
+        defer {
+            blockBuffer.map { CFRelease($0) }
+        }
+        
+        // 复制音频数据到 PCMBuffer
+        let bufferListPointer = UnsafeMutableAudioBufferListPointer(&bufferList)
+        
+        for buffer in bufferListPointer {
+            let audioData = buffer.mData!
+            let dataSize = buffer.mDataByteSize
+            
+            if audioFormat.channelCount == 1 {
+                // 单声道
+                let channelData = pcmBuffer.floatChannelData![0]
+                memcpy(channelData, audioData, Int(dataSize))
+            } else if audioFormat.channelCount == 2 {
+                // 立体声
+                let leftChannelData = pcmBuffer.floatChannelData![0]
+                let rightChannelData = pcmBuffer.floatChannelData![1]
+                
+                // 假设是交错的立体声数据
+                let interleavedData = audioData.assumingMemoryBound(to: Float.self)
+                let frameCount = Int(dataSize) / (MemoryLayout<Float>.size * 2)
+                
+                for j in 0..<frameCount {
+                    leftChannelData[j] = interleavedData[j * 2]
+                    rightChannelData[j] = interleavedData[j * 2 + 1]
+                }
+            }
+        }
+        
+        return pcmBuffer
     }
 
     
