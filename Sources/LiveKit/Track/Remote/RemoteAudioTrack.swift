@@ -140,11 +140,16 @@ extension RemoteAudioTrack: AudioRenderer {
         
         let streamDescription = CMAudioFormatDescriptionGetStreamBasicDescription(formatDescription)
         
-        // 创建 AVAudioFormat 对象
-        guard let audioFormat = AVAudioFormat(streamDescription: streamDescription.pointee) else {
-            print("创建 AVAudioFormat 失败")
+        // 创建 AVAudioFormat 对象 - 修复指针转换问题
+        guard let asbd = streamDesc else {
+            print("无法获取音频流描述")
             return nil
         }
+        
+        let audioFormat = AVAudioFormat(commonFormat: .pcmFormatInt16,
+                                           sampleRate: Double(asbd.pointee.mSampleRate),
+                                           channels: AVAudioChannelCount(asbd.pointee.mChannelsPerFrame),
+                                           interleaved: asbd.pointee.mFormatFlags & kAudioFormatFlagIsNonInterleaved == 0)
         
         // 获取样本帧数
         let frameCount = CMSampleBufferGetNumSamples(sampleBuffer)
@@ -175,11 +180,6 @@ extension RemoteAudioTrack: AudioRenderer {
         guard status == noErr else {
             print("获取音频缓冲区列表失败: \(status)")
             return nil
-        }
-        
-        // 确保 blockBuffer 被释放
-        defer {
-            blockBuffer.map { CFRelease($0) }
         }
         
         // 复制音频数据到 PCMBuffer
