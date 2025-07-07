@@ -141,7 +141,7 @@ extension RemoteAudioTrack: AudioRenderer {
         let streamDescription = CMAudioFormatDescriptionGetStreamBasicDescription(formatDescription)
         
         // 创建 AVAudioFormat 对象 - 修复指针转换问题
-        guard let asbd = streamDesc else {
+        guard let asbd = streamDescription else {
             print("无法获取音频流描述")
             return nil
         }
