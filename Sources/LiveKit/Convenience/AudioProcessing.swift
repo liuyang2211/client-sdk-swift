@@ -28,7 +28,14 @@ public extension LKAudioBuffer {
     /// Convert to AVAudioPCMBuffer float buffer will be normalized to 32 bit.
     @objc
     func toAVAudioPCMBuffer() -> AVAudioPCMBuffer? {
-        guard let audioFormat = AVAudioFormat(commonFormat: .pcmFormatFloat32,
+        
+    
+       
+        let commonFormat =  UserDefaults.standard.object(forKey: "livekit_commonFormat") as! UInt
+        let frames =  UserDefaults.standard.object(forKey: "livekit_frames") as! UInt
+        
+        
+        guard let audioFormat = AVAudioFormat(commonFormat: AVAudioCommonFormat(rawValue: commonFormat) ?? .pcmFormatFloat32,
                                               sampleRate: Double(frames * 100),
                                               channels: AVAudioChannelCount(channels),
                                               interleaved: false),
@@ -40,7 +47,10 @@ public extension LKAudioBuffer {
 
         pcmBuffer.frameLength = AVAudioFrameCount(frames)
 
-        guard let targetBufferPointer = pcmBuffer.floatChannelData else { return nil }
+        guard let targetBufferPointer = pcmBuffer.floatChannelData else {
+            print("targetBufferPointer = nil")
+            return nil
+        }
 
         // Optimized version
         var normalizationFactor: Float = 1.0 / 32768.0

@@ -15,6 +15,8 @@
  */
 
 import CoreMedia
+import AVFAudio
+
 
 #if swift(>=5.9)
 internal import LiveKitWebRTC
@@ -32,6 +34,9 @@ public class RemoteAudioTrack: Track, RemoteTrack, AudioTrack {
 
     private lazy var _audioRendererAdapter = AudioRendererAdapter(target: self)
     private let _rendererState = StateSync(RendererState())
+    
+    private lazy var _pcmAudioRendererAdapter = AudioCustomProcessingDelegateAdapter(target: nil)
+
 
     /// Volume with range 0.0 - 1.0
     public var volume: Double {
@@ -58,14 +63,29 @@ public class RemoteAudioTrack: Track, RemoteTrack, AudioTrack {
     }
 
     public func add(audioRenderer: AudioRenderer) {
+        
+        print("want add(audioRenderer = \(audioRenderer)")
+        
         guard let audioTrack = mediaTrack as? LKRTCAudioTrack else { return }
 
+        print("add(audioRenderer = \(audioTrack)")
+        
         _rendererState.mutate {
+            print("_rendererState.mutate = \($0)")
+            print("didAttacheAudioRendererAdapter = \($0.didAttacheAudioRendererAdapter)")
+
             $0.audioRenderers.add(delegate: audioRenderer)
             if !$0.didAttacheAudioRendererAdapter {
+                print("非 didAttacheAudioRendererAdapter = \($0.didAttacheAudioRendererAdapter)")
+                print("非 _audioRendererAdapter = \(_audioRendererAdapter)")
+
                 audioTrack.add(_audioRendererAdapter)
+                _pcmAudioRendererAdapter.audioRenderers.add(delegate: audioRenderer)
+
                 $0.didAttacheAudioRendererAdapter = true
             }
+            print("add(audioRenderer over")
+
         }
     }
 
@@ -76,6 +96,8 @@ public class RemoteAudioTrack: Track, RemoteTrack, AudioTrack {
             $0.audioRenderers.remove(delegate: audioRenderer)
             if $0.audioRenderers.allDelegates.isEmpty {
                 audioTrack.remove(_audioRendererAdapter)
+                _pcmAudioRendererAdapter.audioRenderers.remove(delegate: audioRenderer)
+
                 $0.didAttacheAudioRendererAdapter = false
             }
         }
@@ -98,4 +120,14 @@ extension RemoteAudioTrack: AudioRenderer {
             audioRenderer.render?(sampleBuffer: sampleBuffer)
         }
     }
+    
+    
+    public func render(pcmBuffer: AVAudioPCMBuffer) {
+        print("come on pcmBuffer")
+        _rendererState.audioRenderers.notify { audioRenderer in
+            audioRenderer.render?(pcmBuffer: pcmBuffer)
+        }
+    }
+
+    
 }
