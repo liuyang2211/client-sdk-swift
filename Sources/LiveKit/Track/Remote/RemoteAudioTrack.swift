@@ -287,6 +287,7 @@ extension RemoteAudioTrack: AudioRenderer {
         }
         
         // 处理单声道和立体声
+        let data = bufferList.mBuffers.mData
         // 单声道
         let channelData = pcmBuffer.floatChannelData![0]
         let byteSize = Int(bufferList.mBuffers.mDataByteSize)
