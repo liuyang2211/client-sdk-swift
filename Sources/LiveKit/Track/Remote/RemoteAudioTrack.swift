@@ -17,6 +17,23 @@
 import CoreMedia
 import AVFAudio
 
+// 定义 WAV 文件头结构体
+struct WavHeader {
+    var riff: [UInt8] = Array("RIFF".utf8)
+    var fileSize: UInt32 = 0
+    var wave: [UInt8] = Array("WAVE".utf8)
+    var fmt: [UInt8] = Array("fmt ".utf8)
+    var fmtSize: UInt32 = 16
+    var audioFormat: UInt16 = 1
+    var numChannels: UInt16 = 0
+    var sampleRate: UInt32 = 0
+    var bitsPerSample: UInt16 = 0
+    var byteRate: UInt32 = 0
+    var blockAlign: UInt16 = 0
+    var data: [UInt8] = Array("data".utf8)
+    var dataSize: UInt32 = 0
+}
+
 
 #if swift(>=5.9)
 internal import LiveKitWebRTC
@@ -119,53 +136,50 @@ public class RemoteAudioTrack: Track, RemoteTrack, AudioTrack {
     }
 
     // 新增：生成 WAV 头
-    private func generateWAVHeader(sampleRate: Double, channels: UInt32, bitDepth: UInt32, dataSize: Int) -> Data {
-        var header = Data()
+    func convertPCMDataToWAV(pcmData: Data, sampleRate: Int, numChannels: Int, bitsPerSample: Int) -> Data? {
+        // 检查输入数据
+        if pcmData.isEmpty {
+            print("错误：PCM数据为空")
+            return nil
+        }
         
-        // ChunkID: "RIFF"
-        header.append("RIFF".data(using: .ascii)!)
-        // ChunkSize: 文件总大小 - 8
-        var chunkSize = UInt32(36 + dataSize)
-        header.append(Data(bytes: &chunkSize, count: 4))
-        // Format: "WAVE"
-        header.append("WAVE".data(using: .ascii)!)
+        // 创建WAV文件头
+        var header = WavHeader()
         
-        // Subchunk1ID: "fmt "
-        header.append("fmt ".data(using: .ascii)!)
-        // Subchunk1Size: 16 for PCM
-        var subchunk1Size: UInt32 = 16
-        header.append(Data(bytes: &subchunk1Size, count: 4))
-        // AudioFormat: 1 for PCM
-        var audioFormat: UInt16 = 1
-        header.append(Data(bytes: &audioFormat, count: 2))
+        // 填充RIFF头
+        header.fileSize = UInt32(pcmData.count + MemoryLayout<WavHeader>.size - 8)
         
-        // 将 channels 改为 var 变量
-        var mutableChannels = channels
-        // NumChannels
-        header.append(Data(bytes: &mutableChannels, count: 2))
+        // 填充fmt子块
+        header.numChannels = UInt16(numChannels)
+        header.sampleRate = UInt32(sampleRate)
+        header.bitsPerSample = UInt16(bitsPerSample)
+        header.byteRate = UInt32(sampleRate * numChannels * bitsPerSample / 8)
+        header.blockAlign = UInt16(numChannels * bitsPerSample / 8)
         
-        // SampleRate
-        var sampleRateUInt32 = UInt32(sampleRate)
-        header.append(Data(bytes: &sampleRateUInt32, count: 4))
-        // ByteRate = SampleRate * NumChannels * BitDepth / 8
-        var byteRate = UInt32(sampleRate * Double(channels) * Double(bitDepth) / 8)
-        header.append(Data(bytes: &byteRate, count: 4))
-        // BlockAlign = NumChannels * BitDepth / 8
-        var blockAlign = UInt16(channels * bitDepth / 8)
-        header.append(Data(bytes: &blockAlign, count: 2))
+        // 填充data子块
+        header.dataSize = UInt32(pcmData.count)
         
-        // 将 bitDepth 赋值给可变变量
-        var mutableBitDepth = bitDepth
-        // BitsPerSample
-        header.append(Data(bytes: &mutableBitDepth, count: 2))
+        // 将结构体转换为 Data
+        var headerData = Data()
+        headerData.append(contentsOf: header.riff)
+        headerData.append(header.fileSize.bigEndian.data)
+        headerData.append(contentsOf: header.wave)
+        headerData.append(contentsOf: header.fmt)
+        headerData.append(header.fmtSize.bigEndian.data)
+        headerData.append(header.audioFormat.bigEndian.data)
+        headerData.append(header.numChannels.bigEndian.data)
+        headerData.append(header.sampleRate.bigEndian.data)
+        headerData.append(header.bitsPerSample.bigEndian.data)
+        headerData.append(header.byteRate.bigEndian.data)
+        headerData.append(header.blockAlign.bigEndian.data)
+        headerData.append(contentsOf: header.data)
+        headerData.append(header.dataSize.bigEndian.data)
         
-        // Subchunk2ID: "data"
-        header.append("data".data(using: .ascii)!)
-        // Subchunk2Size: 数据大小
-        var subchunk2Size = UInt32(dataSize)
-        header.append(Data(bytes: &subchunk2Size, count: 4))
+        // 创建包含文件头和PCM数据的WAV数据
+        var wavData = headerData
+        wavData.append(pcmData)
         
-        return header
+        return wavData
     }
 
     // 新增：存储 WAV 数据到本地
@@ -180,12 +194,9 @@ public class RemoteAudioTrack: Track, RemoteTrack, AudioTrack {
 
     // 新增：实时检查和处理数据
     private func checkAndProcessData() {
+        
         if currentSegmentData.count > oneMB {
-            let sampleRate: Double = 44100
-            let channels: UInt32 = 1
-            let bitDepth: UInt32 = 16
-            let wavHeader = generateWAVHeader(sampleRate: sampleRate, channels: channels, bitDepth: bitDepth, dataSize: currentSegmentData.count)
-            var wavData = wavHeader + currentSegmentData
+            var wavData = convertPCMDataToWAV(currentSegmentData,44100,1,16)
 
             let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
             let filePath = documentsDirectory.appendingPathComponent("output_\(Date().timeIntervalSince1970).wav").path
