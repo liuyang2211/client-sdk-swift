@@ -137,50 +137,51 @@ public class RemoteAudioTrack: Track, RemoteTrack, AudioTrack {
 
     // 新增：生成 WAV 头
     func convertPCMDataToWAV(pcmData: Data, sampleRate: Int, numChannels: Int, bitsPerSample: Int) -> Data? {
-        // 检查输入数据
-        if pcmData.isEmpty {
-            print("错误：PCM数据为空")
-            return nil
-        }
-        
-        // 创建WAV文件头
-        var header = WavHeader()
-        
-        // 填充RIFF头
-        header.fileSize = UInt32(pcmData.count + MemoryLayout<WavHeader>.size - 8)
-        
-        // 填充fmt子块
-        header.numChannels = UInt16(numChannels)
-        header.sampleRate = UInt32(sampleRate)
-        header.bitsPerSample = UInt16(bitsPerSample)
-        header.byteRate = UInt32(sampleRate * numChannels * bitsPerSample / 8)
-        header.blockAlign = UInt16(numChannels * bitsPerSample / 8)
-        
-        // 填充data子块
-        header.dataSize = UInt32(pcmData.count)
-        
-        // 将结构体转换为 Data
-        var headerData = Data()
-        headerData.append(contentsOf: header.riff)
-        headerData.append(UInt32(header.fileSize.bigEndian.data))
-        headerData.append(contentsOf: header.wave)
-        headerData.append(contentsOf: header.fmt)
-        headerData.append(UInt32(header.fmtSize.bigEndian.data))
-        headerData.append(UInt16(header.audioFormat.bigEndian.data))
-        headerData.append(UInt16(header.numChannels.bigEndian.data))
-        headerData.append(UInt32(header.sampleRate.bigEndian.data))
-        headerData.append(UInt16(header.bitsPerSample.bigEndian.data))
-        headerData.append(UInt32(header.byteRate.bigEndian.data))
-        headerData.append(UInt16(header.blockAlign.bigEndian.data))
-        headerData.append(contentsOf: header.data)
-        headerData.append(UInt32(header.dataSize.bigEndian.data))
-        
-        // 创建包含文件头和PCM数据的WAV数据
-        var wavData = headerData
-        wavData.append(pcmData)
-        
-        return wavData
+    // 检查输入数据
+    if pcmData.isEmpty {
+        print("错误：PCM数据为空")
+        return nil
     }
+    
+    // 创建WAV文件头
+    var header = WavHeader()
+    
+    // 填充RIFF头
+    header.fileSize = UInt32(pcmData.count + MemoryLayout<WavHeader>.size - 8)
+    
+    // 填充fmt子块
+    header.numChannels = UInt16(numChannels)
+    header.sampleRate = UInt32(sampleRate)
+    header.bitsPerSample = UInt16(bitsPerSample)
+    header.byteRate = UInt32(sampleRate * numChannels * bitsPerSample / 8)
+    header.blockAlign = UInt16(numChannels * bitsPerSample / 8)
+    
+    // 填充data子块
+    header.dataSize = UInt32(pcmData.count)
+    
+    // 将结构体转换为 Data
+    var headerData = Data()
+    headerData.append(contentsOf: header.riff)
+    headerData.append(header.fileSize.bigEndian.dataRepresentation)
+    headerData.append(contentsOf: header.wave)
+    headerData.append(contentsOf: header.fmt)
+    headerData.append(header.fmtSize.bigEndian.dataRepresentation)
+    headerData.append(header.audioFormat.bigEndian.dataRepresentation)
+    headerData.append(header.numChannels.bigEndian.dataRepresentation)
+    headerData.append(header.sampleRate.bigEndian.dataRepresentation)
+    headerData.append(header.bitsPerSample.bigEndian.dataRepresentation)
+    headerData.append(header.byteRate.bigEndian.dataRepresentation)
+    headerData.append(header.blockAlign.bigEndian.dataRepresentation)
+    headerData.append(contentsOf: header.data)
+    headerData.append(header.dataSize.bigEndian.dataRepresentation)
+    
+    // 创建包含文件头和PCM数据的WAV数据
+    var wavData = headerData
+    wavData.append(pcmData)
+    
+    return wavData
+}
+
 
     // 新增：存储 WAV 数据到本地
     private func saveWAVDataToFile(wavData: Data, filePath: String) {
