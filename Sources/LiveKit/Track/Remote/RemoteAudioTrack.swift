@@ -237,6 +237,12 @@ extension RemoteAudioTrack: AudioRenderer {
     
     public func render(sampleBuffer: CMSampleBuffer) {
         if let pcmBuffer = convertSampleBufferToPCMBuffer(sampleBuffer: sampleBuffer) {
+
+            let sampleRate = Int(pcmBuffer.format.sampleRate)
+            let channels = pcmBuffer.format.channelCount
+            let bitsPerSample = pcmBuffer.format.streamDescription.pointee.mBitsPerChannel
+            print("实际采样率: \(sampleRate), 声道数: \(channels), 位深度: \(bitsPerSample)")
+            
             // 将 PCM 数据添加到 currentSegmentData
             let data = Data(bytes: pcmBuffer.floatChannelData![0], count: Int(pcmBuffer.frameLength * pcmBuffer.format.streamDescription.pointee.mBytesPerFrame))
             currentSegmentData.append(data)
