@@ -223,7 +223,7 @@ public class RemoteAudioTrack: Track, RemoteTrack, AudioTrack {
             if let wavData = convertPCMDataToWAV(currentSegmentData, 
                                        sampleRate: 48000, 
                                        numChannels: 1, 
-                                       bitsPerSample: 16) {
+                                       bitsPerSample: 32) {
         let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
         let filePath = documentsDirectory.appendingPathComponent("output_\(Date().timeIntervalSince1970).wav").path
         saveWAVDataToFile(wavData: wavData, filePath: filePath)
