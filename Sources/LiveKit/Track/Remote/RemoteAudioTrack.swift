@@ -221,7 +221,7 @@ public class RemoteAudioTrack: Track, RemoteTrack, AudioTrack {
         
         if currentSegmentData.count > oneMB {
             if let wavData = convertPCMDataToWAV(currentSegmentData, 
-                                       sampleRate: 44100, 
+                                       sampleRate: 48000, 
                                        numChannels: 1, 
                                        bitsPerSample: 32) {
         let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
