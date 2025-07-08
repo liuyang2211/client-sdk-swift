@@ -55,6 +55,7 @@ public class RemoteAudioTrack: Track, RemoteTrack, AudioTrack {
          track: LKRTCMediaStreamTrack,
          reportStatistics: Bool)
     {
+        print("init RemoteAudioTrack")
         super.init(name: name,
                    kind: .audio,
                    source: source,
