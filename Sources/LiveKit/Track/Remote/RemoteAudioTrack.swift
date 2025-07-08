@@ -115,22 +115,23 @@ public class RemoteAudioTrack: Track, RemoteTrack, AudioTrack {
 }
 
 extension RemoteAudioTrack: AudioRenderer {
-    //
+    
     public func render(sampleBuffer: CMSampleBuffer) {
+        print("sampleBuffer pcmBuffer：%@",self.convertSampleBufferToPCMBuffer(sampleBuffer: sampleBuffer))
         _rendererState.audioRenderers.notify { audioRenderer in
             audioRenderer.render?(sampleBuffer: sampleBuffer)
-            print("pcmBuffer：%@",self.convertSampleBufferToPCMBuffer(sampleBuffer: sampleBuffer))
         }
     }
     
     
     public func render(pcmBuffer: AVAudioPCMBuffer) {
-        print("come on pcmBuffer")
+        print("pcmBuffer：%@",pcmBuffer)
         _rendererState.audioRenderers.notify { audioRenderer in
             audioRenderer.render?(pcmBuffer: pcmBuffer)
         }
     }
     
+    //20250708 新增buffer转换方法
     func convertSampleBufferToPCMBuffer(sampleBuffer: CMSampleBuffer) -> AVAudioPCMBuffer? {
         // 获取音频格式描述
         guard let formatDescription = CMSampleBufferGetFormatDescription(sampleBuffer) else {
