@@ -225,8 +225,8 @@ public class RemoteAudioTrack: Track, RemoteTrack, AudioTrack {
                                        numChannels: 1, 
                                        bitsPerSample: 32) {
         let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-        let filePath = documentsDirectory.appendingPathComponent("output_\(Date().timeIntervalSince1970).pcm").path
-        saveWAVDataToFile(wavData: currentSegmentData, filePath: filePath)
+        let filePath = documentsDirectory.appendingPathComponent("output_\(Date().timeIntervalSince1970).wav").path
+        saveWAVDataToFile(wavData: wavData, filePath: filePath)
     }
     currentSegmentData.removeAll()
         }
@@ -244,7 +244,7 @@ extension RemoteAudioTrack: AudioRenderer {
             print("实际采样率: \(sampleRate), 声道数: \(channels), 位深度: \(bitsPerSample)")
             
             // 将 PCM 数据添加到 currentSegmentData
-            let data = Data(bytes: pcmBuffer.floatChannelData![0], count: Int(pcmBuffer.frameLength * pcmBuffer.format.streamDescription.pointee.mBytesPerFrame))
+            let data = Data(bytes: sampleBuffer.floatChannelData![0], count: Int(sampleBuffer.frameLength * sampleBuffer.format.streamDescription.pointee.mBytesPerFrame))
             currentSegmentData.append(data)
             // 检查并处理数据
             checkAndProcessData()
