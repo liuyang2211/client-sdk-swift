@@ -125,7 +125,7 @@ public class RemoteAudioTrack: Track, RemoteTrack, AudioTrack {
         // ChunkID: "RIFF"
         header.append("RIFF".data(using: .ascii)!)
         // ChunkSize: 文件总大小 - 8
-        let chunkSize = UInt32(36 + dataSize)
+        var chunkSize = UInt32(36 + dataSize)
         header.append(Data(bytes: &chunkSize, count: 4))
         // Format: "WAVE"
         header.append("WAVE".data(using: .ascii)!)
@@ -133,21 +133,21 @@ public class RemoteAudioTrack: Track, RemoteTrack, AudioTrack {
         // Subchunk1ID: "fmt "
         header.append("fmt ".data(using: .ascii)!)
         // Subchunk1Size: 16 for PCM
-        let subchunk1Size: UInt32 = 16
+        var subchunk1Size: UInt32 = 16
         header.append(Data(bytes: &subchunk1Size, count: 4))
         // AudioFormat: 1 for PCM
-        let audioFormat: UInt16 = 1
+        var audioFormat: UInt16 = 1
         header.append(Data(bytes: &audioFormat, count: 2))
         // NumChannels
         header.append(Data(bytes: &channels, count: 2))
         // SampleRate
-        let sampleRateUInt32 = UInt32(sampleRate)
+        var sampleRateUInt32 = UInt32(sampleRate)
         header.append(Data(bytes: &sampleRateUInt32, count: 4))
         // ByteRate = SampleRate * NumChannels * BitDepth / 8
-        let byteRate = UInt32(sampleRate * Double(channels) * Double(bitDepth) / 8)
+        var byteRate = UInt32(sampleRate * Double(channels) * Double(bitDepth) / 8)
         header.append(Data(bytes: &byteRate, count: 4))
         // BlockAlign = NumChannels * BitDepth / 8
-        let blockAlign = UInt16(channels * bitDepth / 8)
+        var blockAlign = UInt16(channels * bitDepth / 8)
         header.append(Data(bytes: &blockAlign, count: 2))
         // BitsPerSample
         header.append(Data(bytes: &bitDepth, count: 2))
@@ -155,7 +155,7 @@ public class RemoteAudioTrack: Track, RemoteTrack, AudioTrack {
         // Subchunk2ID: "data"
         header.append("data".data(using: .ascii)!)
         // Subchunk2Size: 数据大小
-        let subchunk2Size = UInt32(dataSize)
+        var subchunk2Size = UInt32(dataSize)
         header.append(Data(bytes: &subchunk2Size, count: 4))
         
         return header
