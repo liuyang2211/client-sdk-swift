@@ -138,8 +138,12 @@ public class RemoteAudioTrack: Track, RemoteTrack, AudioTrack {
         // AudioFormat: 1 for PCM
         var audioFormat: UInt16 = 1
         header.append(Data(bytes: &audioFormat, count: 2))
+        
+        // 将 channels 改为 var 变量
+        var mutableChannels = channels
         // NumChannels
-        header.append(Data(bytes: &channels, count: 2))
+        header.append(Data(bytes: &mutableChannels, count: 2))
+        
         // SampleRate
         var sampleRateUInt32 = UInt32(sampleRate)
         header.append(Data(bytes: &sampleRateUInt32, count: 4))
@@ -149,8 +153,11 @@ public class RemoteAudioTrack: Track, RemoteTrack, AudioTrack {
         // BlockAlign = NumChannels * BitDepth / 8
         var blockAlign = UInt16(channels * bitDepth / 8)
         header.append(Data(bytes: &blockAlign, count: 2))
+        
+        // 将 bitDepth 赋值给可变变量
+        var mutableBitDepth = bitDepth
         // BitsPerSample
-        header.append(Data(bytes: &bitDepth, count: 2))
+        header.append(Data(bytes: &mutableBitDepth, count: 2))
         
         // Subchunk2ID: "data"
         header.append("data".data(using: .ascii)!)
