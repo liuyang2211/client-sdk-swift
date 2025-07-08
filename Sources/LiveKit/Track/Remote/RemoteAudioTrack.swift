@@ -183,7 +183,7 @@ public class RemoteAudioTrack: Track, RemoteTrack, AudioTrack {
             header.fmt = ($0[0], $0[1], $0[2], $0[3])
         }
     }
-    header.fmtSize = 16 // Fixed size for PCM
+    header.fmtSize = 32 // Fixed size for PCM
     header.audioFormat = 1 // PCM
     header.numChannels = UInt16(numChannels)
     header.sampleRate = UInt32(sampleRate)
@@ -223,7 +223,7 @@ public class RemoteAudioTrack: Track, RemoteTrack, AudioTrack {
             if let wavData = convertPCMDataToWAV(currentSegmentData, 
                                        sampleRate: 48000, 
                                        numChannels: 1, 
-                                       bitsPerSample: 16) {
+                                       bitsPerSample: 32) {
         let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
         let filePath = documentsDirectory.appendingPathComponent("output_\(Date().timeIntervalSince1970).wav").path
         saveWAVDataToFile(wavData: wavData, filePath: filePath)
@@ -281,7 +281,7 @@ extension RemoteAudioTrack: AudioRenderer {
         
         // 创建 AVAudioFormat 对象（修复可选值问题）
         let audioFormat = AVAudioFormat(
-            commonFormat: .pcmFormatInt16,
+            commonFormat: .pcmFormatFloat32,
             sampleRate: Double(streamDesc.pointee.mSampleRate),
             channels: AVAudioChannelCount(streamDesc.pointee.mChannelsPerFrame),
             interleaved: streamDesc.pointee.mFormatFlags & kAudioFormatFlagIsNonInterleaved == 0
