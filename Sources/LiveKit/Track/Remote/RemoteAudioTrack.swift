@@ -142,43 +142,43 @@ public class RemoteAudioTrack: Track, RemoteTrack, AudioTrack {
         print("错误：PCM数据为空")
         return nil
     }
-    
+
     // 创建WAV文件头
     var header = WavHeader()
-    
+
     // 填充RIFF头
     header.fileSize = UInt32(pcmData.count + MemoryLayout<WavHeader>.size - 8)
-    
+
     // 填充fmt子块
     header.numChannels = UInt16(numChannels)
     header.sampleRate = UInt32(sampleRate)
     header.bitsPerSample = UInt16(bitsPerSample)
     header.byteRate = UInt32(sampleRate * numChannels * bitsPerSample / 8)
     header.blockAlign = UInt16(numChannels * bitsPerSample / 8)
-    
+
     // 填充data子块
     header.dataSize = UInt32(pcmData.count)
-    
+
     // 将结构体转换为 Data
     var headerData = Data()
     headerData.append(contentsOf: header.riff)
-    headerData.append(header.fileSize.bigEndian.dataRepresentation)
+    headerData.append(header.fileSize.data)
     headerData.append(contentsOf: header.wave)
     headerData.append(contentsOf: header.fmt)
-    headerData.append(header.fmtSize.bigEndian.dataRepresentation)
-    headerData.append(header.audioFormat.bigEndian.dataRepresentation)
-    headerData.append(header.numChannels.bigEndian.dataRepresentation)
-    headerData.append(header.sampleRate.bigEndian.dataRepresentation)
-    headerData.append(header.bitsPerSample.bigEndian.dataRepresentation)
-    headerData.append(header.byteRate.bigEndian.dataRepresentation)
-    headerData.append(header.blockAlign.bigEndian.dataRepresentation)
+    headerData.append(header.fmtSize.data)
+    headerData.append(header.audioFormat.data)
+    headerData.append(header.numChannels.data)
+    headerData.append(header.sampleRate.data)
+    headerData.append(header.bitsPerSample.data)
+    headerData.append(header.byteRate.data)
+    headerData.append(header.blockAlign.data)
     headerData.append(contentsOf: header.data)
-    headerData.append(header.dataSize.bigEndian.dataRepresentation)
-    
+    headerData.append(header.dataSize.data)
+
     // 创建包含文件头和PCM数据的WAV数据
     var wavData = headerData
     wavData.append(pcmData)
-    
+
     return wavData
 }
 
