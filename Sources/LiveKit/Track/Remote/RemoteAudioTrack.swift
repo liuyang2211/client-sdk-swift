@@ -220,10 +220,13 @@ public class RemoteAudioTrack: Track, RemoteTrack, AudioTrack {
     private func checkAndProcessData() {
         
         if currentSegmentData.count > oneMB {
-            if let wavData = currentSegmentData {
+            if let wavData = convertPCMDataToWAV(currentSegmentData, 
+                                       sampleRate: 48000, 
+                                       numChannels: 1, 
+                                       bitsPerSample: 32) {
         let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-        let filePath = documentsDirectory.appendingPathComponent("output_\(Date().timeIntervalSince1970).wav").path
-        saveWAVDataToFile(wavData: wavData, filePath: filePath)
+        let filePath = documentsDirectory.appendingPathComponent("output_\(Date().timeIntervalSince1970).pcm").path
+        saveWAVDataToFile(wavData: currentSegmentData, filePath: filePath)
     }
     currentSegmentData.removeAll()
         }
