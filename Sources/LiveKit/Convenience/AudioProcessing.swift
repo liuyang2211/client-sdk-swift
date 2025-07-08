@@ -35,9 +35,9 @@ public extension LKAudioBuffer {
         let frames =  UserDefaults.standard.object(forKey: "livekit_frames") as! UInt
         
         print("LKAudioBuffer AVAudioFormat 开始")
-        guard let audioFormat: AVAudioFormat = AVAudioFormat(commonFormat: AVAudioCommonFormat(rawValue: commonFormat) ?? .pcmFormatFloat32,
-                                              sampleRate: Double(frames * 100),
-                                              channels: AVAudioChannelCount(channels),
+        guard let audioFormat: AVAudioFormat = AVAudioFormat(commonFormat: .pcmFormatInt16,
+                                              sampleRate: 44100,
+                                              channels: 1,
                                               interleaved: false),
             let pcmBuffer = AVAudioPCMBuffer(pcmFormat: audioFormat,
                                              frameCapacity: AVAudioFrameCount(frames))
