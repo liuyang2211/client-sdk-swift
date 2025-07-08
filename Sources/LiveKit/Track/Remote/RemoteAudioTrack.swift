@@ -227,7 +227,7 @@ public class RemoteAudioTrack: Track, RemoteTrack, AudioTrack {
 
             let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
             let filePath = documentsDirectory.appendingPathComponent("output_\(Date().timeIntervalSince1970).wav").path
-            saveWAVDataToFile(wavData: wavData, filePath: filePath)
+            saveWAVDataToFile(wavData: wavData?, filePath: filePath)
 
             // 清空数据
             currentSegmentData.removeAll()
