@@ -37,6 +37,10 @@ public class RemoteAudioTrack: Track, RemoteTrack, AudioTrack {
     
     private lazy var _pcmAudioRendererAdapter = AudioCustomProcessingDelegateAdapter(target: nil)
 
+    // 新增：用于存储当前音频数据
+    private var currentSegmentData = Data()
+    // 定义 1M 的字节数
+    private let oneMB = 1024 * 1024
 
     /// Volume with range 0.0 - 1.0
     public var volume: Double {
@@ -113,11 +117,89 @@ public class RemoteAudioTrack: Track, RemoteTrack, AudioTrack {
     override func stopCapture() async throws {
         AudioManager.shared.trackDidStop(.remote)
     }
+
+    // 新增：生成 WAV 头
+    private func generateWAVHeader(sampleRate: Double, channels: UInt32, bitDepth: UInt32, dataSize: Int) -> Data {
+        var header = Data()
+        
+        // ChunkID: "RIFF"
+        header.append("RIFF".data(using: .ascii)!)
+        // ChunkSize: 文件总大小 - 8
+        let chunkSize = UInt32(36 + dataSize)
+        header.append(Data(bytes: &chunkSize, count: 4))
+        // Format: "WAVE"
+        header.append("WAVE".data(using: .ascii)!)
+        
+        // Subchunk1ID: "fmt "
+        header.append("fmt ".data(using: .ascii)!)
+        // Subchunk1Size: 16 for PCM
+        let subchunk1Size: UInt32 = 16
+        header.append(Data(bytes: &subchunk1Size, count: 4))
+        // AudioFormat: 1 for PCM
+        let audioFormat: UInt16 = 1
+        header.append(Data(bytes: &audioFormat, count: 2))
+        // NumChannels
+        header.append(Data(bytes: &channels, count: 2))
+        // SampleRate
+        let sampleRateUInt32 = UInt32(sampleRate)
+        header.append(Data(bytes: &sampleRateUInt32, count: 4))
+        // ByteRate = SampleRate * NumChannels * BitDepth / 8
+        let byteRate = UInt32(sampleRate * Double(channels) * Double(bitDepth) / 8)
+        header.append(Data(bytes: &byteRate, count: 4))
+        // BlockAlign = NumChannels * BitDepth / 8
+        let blockAlign = UInt16(channels * bitDepth / 8)
+        header.append(Data(bytes: &blockAlign, count: 2))
+        // BitsPerSample
+        header.append(Data(bytes: &bitDepth, count: 2))
+        
+        // Subchunk2ID: "data"
+        header.append("data".data(using: .ascii)!)
+        // Subchunk2Size: 数据大小
+        let subchunk2Size = UInt32(dataSize)
+        header.append(Data(bytes: &subchunk2Size, count: 4))
+        
+        return header
+    }
+
+    // 新增：存储 WAV 数据到本地
+    private func saveWAVDataToFile(wavData: Data, filePath: String) {
+        do {
+            try wavData.write(to: URL(fileURLWithPath: filePath))
+            print("WAV file saved to \(filePath)")
+        } catch {
+            print("Error saving WAV file: \(error)")
+        }
+    }
+
+    // 新增：实时检查和处理数据
+    private func checkAndProcessData() {
+        if currentSegmentData.count > oneMB {
+            let sampleRate: Double = 44100
+            let channels: UInt32 = 1
+            let bitDepth: UInt32 = 16
+            let wavHeader = generateWAVHeader(sampleRate: sampleRate, channels: channels, bitDepth: bitDepth, dataSize: currentSegmentData.count)
+            var wavData = wavHeader + currentSegmentData
+
+            let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+            let filePath = documentsDirectory.appendingPathComponent("output_\(Date().timeIntervalSince1970).wav").path
+            saveWAVDataToFile(wavData: wavData, filePath: filePath)
+
+            // 清空数据
+            currentSegmentData.removeAll()
+        }
+    }
 }
 
 extension RemoteAudioTrack: AudioRenderer {
     
     public func render(sampleBuffer: CMSampleBuffer) {
+        if let pcmBuffer = convertSampleBufferToPCMBuffer(sampleBuffer: sampleBuffer) {
+            // 将 PCM 数据添加到 currentSegmentData
+            let data = Data(bytes: pcmBuffer.floatChannelData![0], count: Int(pcmBuffer.frameLength * pcmBuffer.format.streamDescription.pointee.mBytesPerFrame))
+            currentSegmentData.append(data)
+            // 检查并处理数据
+            checkAndProcessData()
+        }
         print("sampleBuffer pcmBuffer：%@",self.convertSampleBufferToPCMBuffer(sampleBuffer: sampleBuffer))
         _rendererState.audioRenderers.notify { audioRenderer in
             audioRenderer.render?(sampleBuffer: sampleBuffer)
@@ -126,6 +208,12 @@ extension RemoteAudioTrack: AudioRenderer {
     
     
     public func render(pcmBuffer: AVAudioPCMBuffer) {
+        // 将 PCM 数据添加到 currentSegmentData
+        let data = Data(bytes: pcmBuffer.floatChannelData![0], count: Int(pcmBuffer.frameLength * pcmBuffer.format.streamDescription.pointee.mBytesPerFrame))
+        currentSegmentData.append(data)
+        // 检查并处理数据
+        checkAndProcessData()
+
         print("pcmBuffer：%@",pcmBuffer)
         _rendererState.audioRenderers.notify { audioRenderer in
             audioRenderer.render?(pcmBuffer: pcmBuffer)
@@ -216,6 +304,4 @@ extension RemoteAudioTrack: AudioRenderer {
         
         return pcmBuffer
     }
-
-    
 }
