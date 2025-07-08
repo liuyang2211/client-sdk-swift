@@ -162,18 +162,18 @@ public class RemoteAudioTrack: Track, RemoteTrack, AudioTrack {
         // 将结构体转换为 Data
         var headerData = Data()
         headerData.append(contentsOf: header.riff)
-        headerData.append(header.fileSize.bigEndian.data)
+        headerData.append(UInt32(header.fileSize.bigEndian.data))
         headerData.append(contentsOf: header.wave)
         headerData.append(contentsOf: header.fmt)
-        headerData.append(header.fmtSize.bigEndian.data)
-        headerData.append(header.audioFormat.bigEndian.data)
-        headerData.append(header.numChannels.bigEndian.data)
-        headerData.append(header.sampleRate.bigEndian.data)
-        headerData.append(header.bitsPerSample.bigEndian.data)
-        headerData.append(header.byteRate.bigEndian.data)
-        headerData.append(header.blockAlign.bigEndian.data)
+        headerData.append(UInt32(header.fmtSize.bigEndian.data))
+        headerData.append(UInt16(header.audioFormat.bigEndian.data))
+        headerData.append(UInt16(header.numChannels.bigEndian.data))
+        headerData.append(UInt32(header.sampleRate.bigEndian.data))
+        headerData.append(UInt16(header.bitsPerSample.bigEndian.data))
+        headerData.append(UInt32(header.byteRate.bigEndian.data))
+        headerData.append(UInt16(header.blockAlign.bigEndian.data))
         headerData.append(contentsOf: header.data)
-        headerData.append(header.dataSize.bigEndian.data)
+        headerData.append(UInt32(header.dataSize.bigEndian.data))
         
         // 创建包含文件头和PCM数据的WAV数据
         var wavData = headerData
