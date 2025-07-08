@@ -287,11 +287,27 @@ extension RemoteAudioTrack: AudioRenderer {
         }
         
         // 处理单声道和立体声
-        let data = bufferList.mBuffers.mData
-        // 单声道
-        let channelData = pcmBuffer.floatChannelData![0]
-        let byteSize = Int(bufferList.mBuffers.mDataByteSize)
-        memcpy(channelData, data, byteSize)
+        if format.channelCount == 1, let data = bufferList.mBuffers.mData {
+            // 单声道
+            let channelData = pcmBuffer.floatChannelData![0]
+            let byteSize = Int(bufferList.mBuffers.mDataByteSize)
+            memcpy(channelData, data, byteSize)
+        } else if format.channelCount == 2, let data = bufferList.mBuffers.mData {
+            // 立体声
+            let leftChannelData = pcmBuffer.floatChannelData![0]
+            let rightChannelData = pcmBuffer.floatChannelData![1]
+            
+            let floatData = data.assumingMemoryBound(to: Float.self)
+            let frameCount = Int(bufferList.mBuffers.mDataByteSize) / (MemoryLayout<Float>.size * 2)
+            
+            for i in 0..<frameCount {
+                leftChannelData[i] = floatData[i * 2]
+                rightChannelData[i] = floatData[i * 2 + 1]
+            }
+        } else {
+            print("不支持的声道数: \(format.channelCount)")
+            return nil
+        }
         
         return pcmBuffer
     }
