@@ -276,6 +276,8 @@ extension RemoteAudioTrack: AudioRenderer {
             print("无法获取音频流描述")
             return nil
         }
+
+        print("convertSampleBufferToPCMBuffer sampleRate：%f  channels：%ld",Double(streamDesc.pointee.mSampleRate),AVAudioChannelCount(streamDesc.pointee.mChannelsPerFrame))
         
         // 创建 AVAudioFormat 对象（修复可选值问题）
         let audioFormat = AVAudioFormat(
