@@ -184,7 +184,7 @@ public class RemoteAudioTrack: Track, RemoteTrack, AudioTrack {
         }
     }
     header.fmtSize = 16 // Fixed size for PCM
-    header.audioFormat = 3 // PCM
+    header.audioFormat = 1 // PCM
     header.numChannels = UInt16(numChannels)
     header.sampleRate = UInt32(sampleRate)
     header.bitsPerSample = UInt16(bitsPerSample)
