@@ -289,7 +289,7 @@ extension RemoteAudioTrack: AudioRenderer {
         // 处理单声道和立体声
         if format.channelCount == 1, let data = bufferList.mBuffers.mData {
             // 单声道
-            let channelData = pcmBuffer.floatChannelData![0]
+            let channelData = pcmBuffer.floatChannelData?[0]
             let byteSize = Int(bufferList.mBuffers.mDataByteSize)
             memcpy(channelData, data, byteSize)
         } else if format.channelCount == 2, let data = bufferList.mBuffers.mData {
