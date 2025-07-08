@@ -281,7 +281,7 @@ extension RemoteAudioTrack: AudioRenderer {
         
         // 创建 AVAudioFormat 对象（修复可选值问题）
         let audioFormat = AVAudioFormat(
-            commonFormat: .pcmFormatFloat32,
+            commonFormat: .pcmFormatInt32,
             sampleRate: Double(streamDesc.pointee.mSampleRate),
             channels: AVAudioChannelCount(streamDesc.pointee.mChannelsPerFrame),
             interleaved: streamDesc.pointee.mFormatFlags & kAudioFormatFlagIsNonInterleaved == 0
