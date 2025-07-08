@@ -220,19 +220,15 @@ public class RemoteAudioTrack: Track, RemoteTrack, AudioTrack {
     private func checkAndProcessData() {
         
         if currentSegmentData.count > oneMB {
-            var wavData = convertPCMDataToWAV(currentSegmentData, 
-                                    sampleRate: 44100, 
-                                    numChannels: 1, 
-                                    bitsPerSample: 16)
-
-            let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-            let filePath = documentsDirectory.appendingPathComponent("output_\(Date().timeIntervalSince1970).wav").path
-            if wavData != nil {
-                saveWAVDataToFile(wavData: wavData, filePath: filePath)
-            }
-
-            // 清空数据
-            currentSegmentData.removeAll()
+            if let wavData = convertPCMDataToWAV(currentSegmentData, 
+                                       sampleRate: 44100, 
+                                       numChannels: 1, 
+                                       bitsPerSample: 16) {
+        let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+        let filePath = documentsDirectory.appendingPathComponent("output_\(Date().timeIntervalSince1970).wav").path
+        saveWAVDataToFile(wavData: wavData, filePath: filePath)
+    }
+    currentSegmentData.removeAll()
         }
     }
 }
