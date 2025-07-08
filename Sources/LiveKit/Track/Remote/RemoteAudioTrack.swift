@@ -162,18 +162,18 @@ public class RemoteAudioTrack: Track, RemoteTrack, AudioTrack {
     // 将结构体转换为 Data
     var headerData = Data()
     headerData.append(contentsOf: header.riff)
-    headerData.append(header.fileSize.data)
+    headerData.append(header.fileSize)
     headerData.append(contentsOf: header.wave)
     headerData.append(contentsOf: header.fmt)
-    headerData.append(header.fmtSize.data)
-    headerData.append(header.audioFormat.data)
-    headerData.append(header.numChannels.data)
-    headerData.append(header.sampleRate.data)
-    headerData.append(header.bitsPerSample.data)
-    headerData.append(header.byteRate.data)
-    headerData.append(header.blockAlign.data)
-    headerData.append(contentsOf: header.data)
-    headerData.append(header.dataSize.data)
+    headerData.append(header.fmtSize)
+    headerData.append(header.audioFormat)
+    headerData.append(header.numChannels)
+    headerData.append(header.sampleRate)
+    headerData.append(header.bitsPerSample)
+    headerData.append(header.byteRate)
+    headerData.append(header.blockAlign)
+    headerData.append(contentsOf: header)
+    headerData.append(header.dataSize)
 
     // 创建包含文件头和PCM数据的WAV数据
     var wavData = headerData
