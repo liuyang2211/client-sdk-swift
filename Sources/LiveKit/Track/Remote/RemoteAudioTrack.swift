@@ -220,7 +220,10 @@ public class RemoteAudioTrack: Track, RemoteTrack, AudioTrack {
     private func checkAndProcessData() {
         
         if currentSegmentData.count > oneMB {
-            var wavData = convertPCMDataToWAV(currentSegmentData,44100,1,16)
+            var wavData = convertPCMDataToWAV(currentSegmentData, 
+                                    sampleRate: 44100, 
+                                    numChannels: 1, 
+                                    bitsPerSample: 16)
 
             let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
             let filePath = documentsDirectory.appendingPathComponent("output_\(Date().timeIntervalSince1970).wav").path
