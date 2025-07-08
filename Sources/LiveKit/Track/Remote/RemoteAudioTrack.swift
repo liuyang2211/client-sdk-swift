@@ -17,23 +17,38 @@
 import CoreMedia
 import AVFAudio
 
-// 定义 WAV 文件头结构体
+// WAV header structure
 struct WavHeader {
-    var riff: [UInt8] = Array("RIFF".utf8)
-    var fileSize: UInt32 = 0
-    var wave: [UInt8] = Array("WAVE".utf8)
-    var fmt: [UInt8] = Array("fmt ".utf8)
-    var fmtSize: UInt32 = 16
-    var audioFormat: UInt16 = 1
-    var numChannels: UInt16 = 0
-    var sampleRate: UInt32 = 0
-    var bitsPerSample: UInt16 = 0
-    var byteRate: UInt32 = 0
-    var blockAlign: UInt16 = 0
-    var data: [UInt8] = Array("data".utf8)
-    var dataSize: UInt32 = 0
+    var riff: (UInt8, UInt8, UInt8, UInt8) // "RIFF"
+    var fileSize: UInt32
+    var wave: (UInt8, UInt8, UInt8, UInt8) // "WAVE"
+    var fmt: (UInt8, UInt8, UInt8, UInt8)  // "fmt "
+    var fmtSize: UInt32
+    var audioFormat: UInt16
+    var numChannels: UInt16
+    var sampleRate: UInt32
+    var byteRate: UInt32
+    var blockAlign: UInt16
+    var bitsPerSample: UInt16
+    var data: (UInt8, UInt8, UInt8, UInt8) // "data"
+    var dataSize: UInt32
+    
+    init() {
+        riff = (0, 0, 0, 0)
+        fileSize = 0
+        wave = (0, 0, 0, 0)
+        fmt = (0, 0, 0, 0)
+        fmtSize = 0
+        audioFormat = 0
+        numChannels = 0
+        sampleRate = 0
+        byteRate = 0
+        blockAlign = 0
+        bitsPerSample = 0
+        data = (0, 0, 0, 0)
+        dataSize = 0
+    }
 }
-
 
 #if swift(>=5.9)
 internal import LiveKitWebRTC
@@ -136,49 +151,58 @@ public class RemoteAudioTrack: Track, RemoteTrack, AudioTrack {
     }
 
     // 新增：生成 WAV 头
-    func convertPCMDataToWAV(pcmData: Data, sampleRate: Int, numChannels: Int, bitsPerSample: Int) -> Data? {
-    // 检查输入数据
-    if pcmData.isEmpty {
-        print("错误：PCM数据为空")
+    func convertPCMDataToWAV(_ pcmData: Data, 
+                        sampleRate: Int, 
+                        numChannels: Int, 
+                        bitsPerSample: Int) -> Data? {
+    // Check input data
+    guard !pcmData.isEmpty else {
+        print("Error: PCM data is empty")
         return nil
     }
-
-    // 创建WAV文件头
+    
+    // Create WAV header struct
     var header = WavHeader()
-
-    // 填充RIFF头
+    
+    // Fill RIFF header
+    "RIFF".utf8CString.withUnsafeBytes { buffer in
+        buffer.baseAddress?.withMemoryRebound(to: UInt8.self, capacity: 4) {
+            header.riff = ($0[0], $0[1], $0[2], $0[3])
+        }
+    }
     header.fileSize = UInt32(pcmData.count + MemoryLayout<WavHeader>.size - 8)
-
-    // 填充fmt子块
+    "WAVE".utf8CString.withUnsafeBytes { buffer in
+        buffer.baseAddress?.withMemoryRebound(to: UInt8.self, capacity: 4) {
+            header.wave = ($0[0], $0[1], $0[2], $0[3])
+        }
+    }
+    
+    // Fill fmt subchunk
+    "fmt ".utf8CString.withUnsafeBytes { buffer in
+        buffer.baseAddress?.withMemoryRebound(to: UInt8.self, capacity: 4) {
+            header.fmt = ($0[0], $0[1], $0[2], $0[3])
+        }
+    }
+    header.fmtSize = 16 // Fixed size for PCM
+    header.audioFormat = 1 // PCM
     header.numChannels = UInt16(numChannels)
     header.sampleRate = UInt32(sampleRate)
     header.bitsPerSample = UInt16(bitsPerSample)
     header.byteRate = UInt32(sampleRate * numChannels * bitsPerSample / 8)
     header.blockAlign = UInt16(numChannels * bitsPerSample / 8)
-
-    // 填充data子块
+    
+    // Fill data subchunk
+    "data".utf8CString.withUnsafeBytes { buffer in
+        buffer.baseAddress?.withMemoryRebound(to: UInt8.self, capacity: 4) {
+            header.data = ($0[0], $0[1], $0[2], $0[3])
+        }
+    }
     header.dataSize = UInt32(pcmData.count)
-
-    // 将结构体转换为 Data
-    var headerData = Data()
-    headerData.append(contentsOf: header.riff)
-    headerData.append(header.fileSize)
-    headerData.append(contentsOf: header.wave)
-    headerData.append(contentsOf: header.fmt)
-    headerData.append(header.fmtSize)
-    headerData.append(header.audioFormat)
-    headerData.append(header.numChannels)
-    headerData.append(header.sampleRate)
-    headerData.append(header.bitsPerSample)
-    headerData.append(header.byteRate)
-    headerData.append(header.blockAlign)
-    headerData.append(contentsOf: header)
-    headerData.append(header.dataSize)
-
-    // 创建包含文件头和PCM数据的WAV数据
-    var wavData = headerData
+    
+    // Create WAV data with header and PCM data
+    var wavData = Data(bytes: &header, count: MemoryLayout<WavHeader>.size)
     wavData.append(pcmData)
-
+    
     return wavData
 }
 
