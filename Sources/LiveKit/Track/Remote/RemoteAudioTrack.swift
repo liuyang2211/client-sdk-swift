@@ -243,11 +243,13 @@ extension RemoteAudioTrack: AudioRenderer {
             let bitsPerSample = pcmBuffer.format.streamDescription.pointee.mBitsPerChannel
             print("实际采样率: \(sampleRate), 声道数: \(channels), 位深度: \(bitsPerSample)")
             
-            // 将 PCM 数据添加到 currentSegmentData
-            let data = processAudioSampleBuffer(sampleBuffer)
-            currentSegmentData.append(data)
-            // 检查并处理数据
-            checkAndProcessData()
+
+            if let pcmData = extractPCMData(from: sampleBuffer) {
+                print("获取到PCM数据: \(pcmData.count)字节")
+                currentSegmentData.append(pcmData)
+                // 检查并处理数据
+                checkAndProcessData()
+            }
         }
         print("sampleBuffer pcmBuffer：%@",self.convertSampleBufferToPCMBuffer(sampleBuffer: sampleBuffer))
         _rendererState.audioRenderers.notify { audioRenderer in
@@ -357,77 +359,58 @@ extension RemoteAudioTrack: AudioRenderer {
     }
 
     //SampleBuffer data转换
-    func processAudioSampleBuffer(_ sampleBuffer: CMSampleBuffer) -> NSData? {
-
-        let dataDefault: NSData = NSData.init()
-        // 1. 验证样本缓冲区是否包含音频数据
-        guard let formatDescription = CMSampleBufferGetFormatDescription(sampleBuffer),
-            CMFormatDescriptionGetMediaType(formatDescription) == kCMMediaType_Audio else {
-            print("错误：样本缓冲区不包含音频数据")
-            return dataDefault
+    func extractPCMData(from sampleBuffer: CMSampleBuffer) -> Data? {
+        // 1. 获取音频格式描述
+        guard let formatDescription = CMSampleBufferGetFormatDescription(sampleBuffer) else {
+            print("无法获取格式描述")
+            return nil
         }
         
-        // 2. 获取音频格式描述信息
-        let asbd = CMAudioFormatDescriptionGetStreamBasicDescription(formatDescription)!
-        let channelCount = Int(asbd.pointee.mChannelsPerFrame)
-        let frameCount = CMSampleBufferGetNumSamples(sampleBuffer)
-        
-        // 3. 创建并初始化AudioBufferList
-        var bufferList = AudioBufferList()
-        var ablPointer = UnsafeMutablePointer<AudioBufferList>.allocate(capacity: 1)
-        ablPointer.initialize(to: bufferList)
-        
-        // 根据声道数设置缓冲区列表
-        if channelCount == 1 {
-            // 单声道
-            ablPointer.pointee.mNumberBuffers = 1
-            ablPointer.pointee.mBuffers.mNumberChannels = 1
-            ablPointer.pointee.mBuffers.mDataByteSize = UInt32(frameCount) * asbd.pointee.mBytesPerFrame
-            ablPointer.pointee.mBuffers.mData = malloc(Int(ablPointer.pointee.mBuffers.mDataByteSize))
-        } else {
-            // 多声道
-            ablPointer.pointee.mNumberBuffers = 1 // 交错存储模式，使用单个缓冲区
-            ablPointer.pointee.mBuffers.mNumberChannels = UInt32(channelCount)
-            ablPointer.pointee.mBuffers.mDataByteSize = UInt32(frameCount) * asbd.pointee.mBytesPerFrame
-            ablPointer.pointee.mBuffers.mData = malloc(Int(ablPointer.pointee.mBuffers.mDataByteSize))
+        // 2. 验证是否为PCM格式
+        let mediaType = CMFormatDescriptionGetMediaType(formatDescription)
+        guard mediaType == kCMMediaType_Audio else {
+            print("不是音频样本")
+            return nil
         }
         
-        // 4. 复制PCM数据
-        do {
-            // 指定要复制的帧范围（这里复制全部帧）
-            let frameRange = 0..<Int(frameCount)
-            try sampleBuffer.copyPCMData(frameRange,&bufferList)
-            
-            // 5. 使用复制的PCM数据（示例：打印前10个样本值）
-            if let data = ablPointer.pointee.mBuffers.mData {
-                switch asbd.pointee.mFormatFlags & kAudioFormatFlagIsFloat {
-                case kAudioFormatFlagIsFloat:
-                    let floatData = data.assumingMemoryBound(to: Float.self)
-                    for i in 0..<min(10, Int(frameCount)) {
-                        print("样本 \(i): \(floatData[i])")
-                    }
-                default:
-                    // 处理其他格式（如整数格式）
-                    let int16Data = data.assumingMemoryBound(to: Int16.self)
-                    for i in 0..<min(10, Int(frameCount)) {
-                        print("样本 \(i): \(int16Data[i])")
-                    }
-                }
-            }
-        } catch let error as NSError {
-            print("错误：复制PCM数据失败 - \(error.localizedDescription)")
+        // 3. 获取音频流描述
+        guard let streamDescription = CMAudioFormatDescriptionGetStreamBasicDescription(formatDescription) else {
+            print("无法获取音频流描述")
+            return nil
         }
         
-        // 6. 释放分配的内存
-        if let data = ablPointer.pointee.mBuffers.mData {
-            ablPointer.deinitialize(count: 1)
-            ablPointer.deallocate() 
-            return data
-        }else{
-            ablPointer.deinitialize(count: 1)
-            ablPointer.deallocate() 
-            return dataDefault
+        print("音频参数：采样率 \(streamDescription.pointee.mSampleRate)Hz, 声道数 \(streamDescription.pointee.mChannelsPerFrame)")
+        
+        // 4. 获取音频缓冲区
+        var audioBufferList = AudioBufferList()
+        var blockBuffer: CMBlockBuffer?
+        
+        let status = CMSampleBufferGetAudioBufferListWithRetainedBlockBuffer(
+            sampleBuffer,
+            bufferListSizeNeededOut: nil,
+            bufferListOut: &audioBufferList,
+            bufferListSize: MemoryLayout<AudioBufferList>.size,
+            blockBufferAllocator: nil,
+            blockBufferMemoryAllocator: nil,
+            flags: kCMSampleBufferFlag_AudioBufferList_Assure16ByteAlignment,
+            blockBufferOut: &blockBuffer
+        )
+        
+        guard status == noErr else {
+            print("获取音频缓冲区失败: \(status)")
+            return nil
         }
+        
+        // 5. 提取PCM数据
+        let buffers = UnsafeBufferPointer<AudioBuffer>(start: &audioBufferList.mBuffers, count: Int(audioBufferList.mNumberBuffers))
+        var pcmData = Data()
+        
+        for buffer in buffers {
+            let audioData = Data(bytes: buffer.mData!, count: Int(buffer.mDataByteSize))
+            pcmData.append(audioData)
+        }
+        
+        return pcmData
     }
 
 }
