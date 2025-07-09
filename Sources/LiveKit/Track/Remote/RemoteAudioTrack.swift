@@ -358,11 +358,13 @@ extension RemoteAudioTrack: AudioRenderer {
 
     //SampleBuffer data转换
     func processAudioSampleBuffer(_ sampleBuffer: CMSampleBuffer) -> NSData? {
+
+        let dataDefault: NSData = NSData.init()
         // 1. 验证样本缓冲区是否包含音频数据
         guard let formatDescription = CMSampleBufferGetFormatDescription(sampleBuffer),
             CMFormatDescriptionGetMediaType(formatDescription) == kCMMediaType_Audio else {
             print("错误：样本缓冲区不包含音频数据")
-            return
+            return dataDefault
         }
         
         // 2. 获取音频格式描述信息
@@ -394,7 +396,7 @@ extension RemoteAudioTrack: AudioRenderer {
         do {
             // 指定要复制的帧范围（这里复制全部帧）
             let frameRange = 0..<Int(frameCount)
-            try sampleBuffer.copyPCMData(into: &bufferList, from: frameRange)
+            try sampleBuffer.copyPCMData(frameRange,&bufferList)
             
             // 5. 使用复制的PCM数据（示例：打印前10个样本值）
             if let data = ablPointer.pointee.mBuffers.mData {
@@ -418,10 +420,14 @@ extension RemoteAudioTrack: AudioRenderer {
         
         // 6. 释放分配的内存
         if let data = ablPointer.pointee.mBuffers.mData {
+            ablPointer.deinitialize(count: 1)
+            ablPointer.deallocate() 
             return data
+        }else{
+            ablPointer.deinitialize(count: 1)
+            ablPointer.deallocate() 
+            return dataDefault
         }
-        ablPointer.deinitialize(count: 1)
-        ablPointer.deallocate()
     }
 
 }
